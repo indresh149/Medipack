@@ -1,118 +1,100 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import {View, Text} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {NavigationContainer} from '@react-navigation/native';
+import DeviceRegistrationScreen from './src/screens/auth/DeviceRegistrationScreen';
+import LoginScreen from './src/screens/auth/LoginScreen';
+import PasswordResetScreen from './src/screens/auth/PasswordResetScreen';
+import {createDrawerNavigator} from '@react-navigation/drawer';
+import CustomDrawer from './src/components/CustomDrawer';
+import UploadParcelScreen from './src/screens/main/UploadParcelScreen';
+import ScanInScreen from './src/screens/main/ScanInScreen';
+import ScanOutScreen from './src/screens/main/ScanOutScreen';
+import SearchPatientScreen from './src/screens/main/SearchPatientScreen';
+import ReturnParcelScreen from './src/screens/main/ReturnParcelScreen';
+import {openDatabase} from 'react-native-sqlite-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import LoadingOverlay from './src/components/LoadingOverlay';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+const Stack = createNativeStackNavigator();
+const Drawer = createDrawerNavigator();
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+function MyDrawer() {
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
+    <Drawer.Navigator
+      drawerContent={props => <CustomDrawer {...props} />}
+      screenOptions={{ headerTintColor: '#53C1BA' }}>
+      <Drawer.Screen name="Upload Parcels" component={UploadParcelScreen} />
+      <Drawer.Screen name="Scan In" component={ScanInScreen} />
+      <Drawer.Screen name="Scan Out" component={ScanOutScreen} />
+      <Drawer.Screen name="Search Patient" component={SearchPatientScreen} />
+      <Drawer.Screen name="Return Parcels" component={ReturnParcelScreen} />
+      <Drawer.Screen name="Request Pass" component={PasswordResetScreen} />
+      <Drawer.Screen name="Device Registration" component={DeviceRegistrationScreen} />
+      <Drawer.Screen name="Login" component={LoginScreen} />
+    </Drawer.Navigator>
   );
 }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
+function AuthenticatedStack() {
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Drawer" component={MyDrawer} />
+      <Stack.Screen name="DeviceRegistrationScreen" component={DeviceRegistrationScreen} />
+      <Stack.Screen name="LoginScreen" component={LoginScreen} />
+    </Stack.Navigator>
   );
 }
 
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+
+
+function Root() {
+  const [initialRoute, setInitialRoute] = useState(''); // Default to null
+  const [isLoading, setIsLoading] = useState(true); // Loading state
+
+  useEffect(() => {
+    async function fetchToken() {
+      try {
+        const devicePassword = await AsyncStorage.getItem('DevicePassword');
+        console.log('device password', devicePassword);
+        const authToken = await AsyncStorage.getItem('AuthToken');
+        console.log('auth token', authToken);
+
+        if (devicePassword != null && authToken != null) {
+          setInitialRoute('MyDrawer');
+        } else if (devicePassword != null && authToken == null) {
+          setInitialRoute('LoginScreen');
+        } else {
+          setInitialRoute('DeviceRegistrationScreen');
+        }
+      } catch (error) {
+        console.error('Error fetching token:', error);
+      } finally {
+        setIsLoading(false); // Stop loading once async operation is complete
+      }
+    }
+
+    fetchToken();
+  }, []);
+
+  if (isLoading) {
+    // Optionally, show a loading indicator or splash screen here
+    return <LoadingOverlay message={"Loading.."}/>; // Return null while loading
+  }
+
+  console.log('initial route', initialRoute);
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRoute}>
+        <Stack.Screen name="MyDrawer" component={AuthenticatedStack} />
+        <Stack.Screen name="DeviceRegistrationScreen" component={DeviceRegistrationScreen} />
+        <Stack.Screen name="LoginScreen" component={LoginScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+const App = () => <Root />;
 
 export default App;
