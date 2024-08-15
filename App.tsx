@@ -22,6 +22,7 @@ import { Parcel } from './Utils/types';
 import DashboardScreen from './src/screens/main/DashboardScreen';
 import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
 import ScanOutManualScreen from './src/screens/main/ScanOutManual';
+import ReturnParcelDetailsScreen from './src/screens/main/ReturnParcelDetailsScreen';
 
 
 
@@ -53,6 +54,7 @@ function AuthenticatedStack() {
       
       <Stack.Screen name="ScanInManualScreen" component={ScanInManualScreen} />
       <Stack.Screen name = "ScanOutManualScreen" component={ScanOutManualScreen} />
+      <Stack.Screen name = "ReturnParcelDetailsScreen" component={ReturnParcelDetailsScreen} />
     </Stack.Navigator>
   );
 }

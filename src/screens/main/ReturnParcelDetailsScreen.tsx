@@ -21,7 +21,7 @@ import { updateParcel } from '../../../database/DeviceSync';
 
 const {height, width} = Dimensions.get('window');
 
-const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({ route }) => {
+const ReturnParcelDetailsScreen: React.FC<NativeStackScreenProps<any, any>> = ({ route }) => {
     const { parcel } = route.params as { parcel: Parcel };
     console.log('Parcel:', parcel);
     const navigation = useNavigation<NativeStackNavigationProp<any>>(); // Add parentheses to call the function
@@ -37,66 +37,25 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({ route
     }
   };
 
-  const radioButtons: RadioButtonProps[] = useMemo(
-    () => [
-      {
-        id: '1',
-        label: 'ID Number/Passport',
-        value: 'option1',
-      },
-      {
-        id: '2',
-        label: 'Pin',
-        value: 'option2',
-      },
-    ],
-    [],
-  );
-
-  const [selectedId, setSelectedId] = useState<string | undefined>();
 
 
-  const handleManualScanOut = async () => {
+  const handleManualReturn = async () => {
 
-    if(selectedId === '1' && idNumber === '') {
-        Alert.alert('Please enter ID Number/Passport');
-        return;
-    }
-
-    if(selectedId === '2' && pin === '') {
-        Alert.alert('Please enter Pin');
-        return;
-    }
-
-    if(selectedId === '1') {
-        if(idNumber !== parcel.idNumber) {
-            Alert.alert('ID Number/Passport does not match');
-            return;
-        }
-    }
-    else{
-        if(pin !== parcel.passcode) {
-            Alert.alert('Pin does not match');
-            return;
-        }
-    }
+  
 
     const userInfo = await getUserInfo();
     const currentUserId = userInfo?.userId;
     try {
-        if(selectedId == '1'){
-      await updateParcel(parcel, currentUserId,"scanOutDatetime","scanOutByUserId",5,parcel.passcode);
-        }
+       
+      await updateParcel(parcel, currentUserId,"scanOutDatetime","scanOutByUserId",6,parcel.passcode);
+        
 
-        if(selectedId == '2'){
-            await updateParcel(parcel, currentUserId,"scanOutDatetime","scanOutByUserId",4,parcel.passcode);
-        }
-    Alert.alert('Parcel scanned out successfully');
-       navigation.replace('Drawer', { screen: 'Scan Out' });;
-      console.log('Parcel scanned out successfully');
+    Alert.alert('Parcel returned successfully');
+       navigation.replace('Drawer', { screen: 'Return Parcels' });;
+      console.log('Parcel returned  successfully');
       // Optionally, navigate back or show a success message
     } catch (error) {
-      console.error('Error during manual scan-out:', error);
+      console.error('Error during manual returned :', error);
     }
   };
 
@@ -104,7 +63,7 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({ route
     // Format the dates as "15 Aug 2024"
     const formattedDueDate = moment(parcel.dueDate).format('DD MMM YYYY');
     const formattedDOB = moment(parcel.dateOfBirth).format('DD MMM YYYY');
-    const fromattedScanInDate = moment(parcel?.scanInDatetime).format('DD MMM YYYY, h:mm:ss a');
+    const fromattedScanInDate = moment(parcel?.scanInDatetime).format('DD MMM YYYY, h:mm:ss a');;
   
     // Calculate the status based on the due date
     const now = moment();
@@ -122,7 +81,7 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({ route
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.inputContainer}>
-        <View style={styles.radioGroup}>
+        {/* <View style={styles.radioGroup}>
           <RadioGroup
             radioButtons={radioButtons}
             onPress={setSelectedId}
@@ -145,9 +104,10 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({ route
             value={pin}
             onChangeText={setPin}
           />
-        )}
-        <TouchableOpacity style={styles.searchButton} onPress={handleManualScanOut}>
-          <Text style={styles.buttonText}>SCAN OUT</Text>
+        )} */}
+        <TouchableOpacity style={styles.searchButton} onPress={handleManualReturn}>
+          <Text style={styles.buttonText}>RETURN DUE TO NON-COLLECTION
+          </Text>
         </TouchableOpacity>
       </View>
       <View style={styles.infoContainer}>
@@ -284,7 +244,7 @@ const styles = StyleSheet.create({
   },
   searchButton: {
     width: '80%',
-    backgroundColor: Colors.green,
+    backgroundColor:'#F89406',
     padding: 10,
     alignItems: 'center',
   },
@@ -366,4 +326,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ScanOutManualScreen;
+export default ReturnParcelDetailsScreen;
