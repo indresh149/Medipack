@@ -1,267 +1,311 @@
-import React, {useMemo, useState} from 'react';
 import {
-  StyleSheet,
   View,
   Text,
-  TextInput,
+  StyleSheet,
   TouchableOpacity,
-  ScrollView,
   Dimensions,
+  FlatList,
 } from 'react-native';
-import {Colors} from '../../../constants/colours';
-import RadioGroup, {RadioButtonProps} from 'react-native-radio-buttons-group';
-import {RFPercentage} from 'react-native-responsive-fontsize';
+import React, { useEffect, useState ,useCallback } from 'react';
+import { Colors } from '../../../constants/colours';
+import { Card } from '@rneui/themed';
+import { TextInput } from 'react-native';
+import { RFPercentage } from 'react-native-responsive-fontsize';
+import SQLite, { ResultSet, Transaction } from 'react-native-sqlite-storage';
+import { useNavigation ,useFocusEffect} from '@react-navigation/native';
+import { NativeStackNavigationProp, NativeStackScreenProps} from '@react-navigation/native-stack';
+import { fetchParcels } from '../../../database/DeviceSync';
+import { Parcel} from '../../../Utils/types'; // Update path as needed
+import moment from 'moment';
 
-const {height, width} = Dimensions.get('window');
-const ScanOutScreen = () => {
-  const [idNumber, setIdNumber] = useState('');
-  const [pin, setPin] = useState('');
 
-  const radioButtons: RadioButtonProps[] = useMemo(
-    () => [
-      {
-        id: '1',
-        label: 'ID Number/Passport',
-        value: 'option1',
-      },
-      {
-        id: '2',
-        label: 'Pin',
-        value: 'option2',
-      },
-    ],
-    [],
+const { height, width } = Dimensions.get('window');
+
+const ScanOutScreen= () => {
+  const [parcels, setParcels] = useState<Parcel[]>([]);
+  const [searchResults, setSearchResults] = useState<Parcel[]>([]);
+  const [barcode, setBarcode] = useState<string>('');
+  const navigation = useNavigation<NativeStackNavigationProp<any>>(); 
+  const loadParcels = async () => {
+    try {
+      let fetchedParcels: Parcel[] = await fetchParcels(3);
+      console.log("parcel data scan out ", fetchedParcels);
+      setParcels(fetchedParcels);
+      setSearchResults(fetchedParcels);
+    } catch (error) {
+      console.error('Error loading parcels:', error);
+    }
+
+  };
+
+
+  useEffect(() => {
+    loadParcels();
+  }, [navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadParcels();
+    }, [])
   );
 
-  const [selectedId, setSelectedId] = useState<string | undefined>();
+
+  type ParcelCardProps = {
+    parcel: Parcel;
+  };
+
+  const ParcelCard: React.FC<ParcelCardProps> = ({ parcel }) => {
+
+    // Format the dates as "15 Aug 2024"
+  const formattedDueDate = moment(parcel.dueDate).format('DD MMM YYYY');
+  const formattedDOB = moment(parcel.dateOfBirth).format('DD MMM YYYY');
+
+  // Calculate the status based on the due date
+  const now = moment();
+  const dueDateMoment = moment(parcel.dueDate);
+  let statusText = '';
+
+  const daysDifference = now.diff(dueDateMoment, 'days');
+
+  if (daysDifference > 2 && daysDifference <= 7) {
+    statusText = '48 - hours overdue';
+  } else if (daysDifference > 7) {
+    statusText = '7 days overdue';
+  }
+
+    return (
+    <View style={styles.mainContainer}>
+      <View style={styles.nameCircle}>
+        <Text style={styles.circleText}>{parcel.firstName.charAt(0)}</Text>
+      </View>
+      <View style={styles.basicDetails}>
+        <Text style={styles.infoText}>Name: {parcel.title} {parcel.firstName} {parcel.surname}</Text>
+        <Text style={styles.infoText}>Barcode: {parcel.barcode}</Text>
+        <Text style={styles.infoText}>Manifest: {parcel.dispatchRef}</Text>
+        <Text style={styles.infoText}>Gender: {parcel.gender}</Text>
+      </View>
+      <View style={[styles.basicDetails, { marginTop: height * 0.03 }]}>
+        <Text style={styles.infoText}>Id Number: {parcel.idNumber}</Text>
+        <Text style={styles.infoText}>Due Date: {formattedDueDate}</Text>
+        <Text style={styles.infoText}>Consignment No.: {parcel.consignmentNo}</Text>
+      </View>
+      <View style={[styles.basicDetails, { marginTop: height * 0.03 }]}>
+        <Text style={styles.infoText}>Cellphone: {parcel.cellphone}</Text>
+        <Text style={styles.infoText}>Date Of Birth: {formattedDOB}</Text>
+      </View>
+      {statusText !== '' && (
+        <View style={[styles.rightBottomText,{backgroundColor: statusText == '7 days overdue' ? '#d9534f' : '#F89406'}]}>
+          <Text style={styles.bottomText}>{statusText}</Text>
+        </View>
+      )}
+    </View>
+  );
+};
+ 
+const handleSearch = () => {
+  const lowerCaseQuery = barcode.toLowerCase(); // Assuming you're using 'barcode' as the search input variable
+
+  const filteredParcels = parcels.filter(parcel =>
+    parcel.barcode.toLowerCase().includes(lowerCaseQuery) ||
+    parcel.firstName.toLowerCase().includes(lowerCaseQuery) ||
+    parcel.surname.toLowerCase().includes(lowerCaseQuery) ||
+    parcel.cellphone.toLowerCase().includes(lowerCaseQuery) ||
+    parcel.idNumber.toLowerCase().includes(lowerCaseQuery)
+  );
+
+  setSearchResults(filteredParcels);
+};
+
+useEffect(() => {
+  const lowerCaseQuery = barcode.toLowerCase(); // Assuming you're using 'barcode' as the search input variable
+
+  const filteredParcels = parcels.filter(parcel =>
+    parcel.barcode.toLowerCase().includes(lowerCaseQuery) ||
+    parcel.firstName.toLowerCase().includes(lowerCaseQuery) ||
+    parcel.surname.toLowerCase().includes(lowerCaseQuery) ||
+    parcel.cellphone.toLowerCase().includes(lowerCaseQuery) ||
+    parcel.idNumber.toLowerCase().includes(lowerCaseQuery)
+  );
+
+  console.log("filtered parcels", filteredParcels);
+  setSearchResults(filteredParcels);
+}, [barcode, parcels]);
+
+  const handleParcelPress = (parcel: Parcel) => {
+    navigation.navigate('ScanOutManualScreen', { parcel });
+  };
+
+  const renderItem = ({ item }: { item: Parcel }) => (
+    <TouchableOpacity onPress={() => handleParcelPress(item)}>
+      <ParcelCard parcel={item} />
+    </TouchableOpacity>
+  );
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.inputContainer}>
-        <View style={styles.radioGroup}>
-          <RadioGroup
-            radioButtons={radioButtons}
-            onPress={setSelectedId}
-            selectedId={selectedId}
-            layout="row"
+    <View style={styles.mainView}>
+      <Card containerStyle={styles.cardView}>
+        <View style={styles.inputTextContainer}>
+          <View>
+          <Text>Search by Name or Cellphone or Id Number or Barcode</Text>
+          </View>
+         
+          <TextInput 
+            style={styles.textInputView} 
+            placeholder="            Enter Search Text"
+            value={barcode}
+            onChangeText={setBarcode}
           />
+          <TouchableOpacity 
+            style={styles.buttomView}
+            onPress={handleSearch}
+          >
+            <Text style={styles.buttonText}>Search</Text>
+          </TouchableOpacity>
         </View>
-        {selectedId === '1' && (
-          <TextInput
-            style={styles.input}
-            placeholder="Enter ID Number / Passport"
-            value={idNumber}
-            onChangeText={setIdNumber}
-          />
-        )}
-        {selectedId === '2' && (
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Pin"
-            value={pin}
-            onChangeText={setPin}
-          />
-        )}
-        <TouchableOpacity style={styles.searchButton}>
-          <Text style={styles.buttonText}>SEARCH</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.infoContainer}>
-        <View style={styles.infoSection}>
-          <View style={styles.headlineView}>
-            <Text style={styles.sectionTitle}>PERSONAL INFORMATION</Text>
-          </View>
-          <View style={styles.oneRowView}>
-            <View style={styles.attributeView}>
-              <Text style={styles.infoText}>Name of Patient</Text>
-            </View>
-            <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>ELIZABETH</Text>
-            </View>
-          </View>
-          <View style={styles.oneRowView}>
-            <View style={styles.attributeView}>
-              <Text style={styles.infoText}>Surname of Patient</Text>
-            </View>
-            <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>ELIZABETH</Text>
-            </View>
-          </View>
-          <View style={styles.oneRowView}>
-            <View style={styles.attributeView}>
-              <Text style={styles.infoText}>Passport Number</Text>
-            </View>
-            <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>123456789</Text>
-            </View>
-          </View>
-          <View style={styles.oneRowView}>
-            <View style={styles.attributeView}>
-              <Text style={styles.infoText}>Cellphone Number</Text>
-            </View>
-            <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>123456789</Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.infoSection}>
-          <View style={styles.headlineView}>
-            <Text style={styles.sectionTitle}>MEDICATION INFORMATION</Text>
-          </View>
+      </Card>
 
-          <View style={styles.oneRowView}>
-            <View style={styles.attributeView}>
-              <Text style={styles.infoText}>Scanned Barcode</Text>
-            </View>
-            <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>NHIALKJHKJH</Text>
-            </View>
-          </View>
-          <View style={styles.oneRowView}>
-            <View style={styles.attributeView}>
-              <Text style={styles.infoText}>Parcel Scanned In Date</Text>
-            </View>
-            <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>2023-12-17 21:37:26</Text>
-            </View>
-          </View>
-          <View style={styles.oneRowView}>
-            <View style={styles.attributeView}>
-              <Text style={styles.infoText}>Parcel Due Date</Text>
-            </View>
-            <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>2017-10-26T00:00:00</Text>
-            </View>
-          </View>
-          <View style={styles.oneRowView}>
-            <View style={styles.attributeView}>
-              <Text style={styles.infoText}>Parcel Status</Text>
-            </View>
-            <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>Scanned In</Text>
-            </View>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.scanOutButton}>
-          <Text style={styles.buttonText}>SCAN OUT</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      <FlatList
+        data={searchResults}
+        keyExtractor={(item) => item.syncId.toString()}
+        renderItem={renderItem}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: 20,
+  mainView: {
+    flex: 1,
     backgroundColor: Colors.white,
-    flexDirection: 'row',
   },
-  title: {
-    fontSize: RFPercentage(2.5),
-    fontWeight: 'bold',
-    marginBottom: height * 0.05,
-    textAlign: 'center',
+  cardView: {
+    margin: 20,
+    width: '97%',
+    borderRadius: 10,
+    backgroundColor: Colors.white,
   },
-  inputContainer: {
-    width: '50%',
-    marginBottom: height * 0.05,
+  inputTextContainer: {
+    
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  radioGroup: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: height * 0.04,
-  },
-  radioText: {
-    fontSize: RFPercentage(1.5),
-  },
-  input: {
+  textInputView: {
+    width: '20%',
     height: height * 0.08,
-    borderColor: Colors.white,
+    backgroundColor: Colors.white,
+    borderRadius: 10,
     borderBottomWidth: 1,
-    paddingHorizontal: 10,
-    marginBottom: height * 0.04,
+    margin: 10,
+    paddingLeft: 10,
   },
-  searchButton: {
-    width: '80%',
+  buttomView: {
+    width: '15%',
+    height: height * 0.08,
     backgroundColor: Colors.green,
-    padding: 10,
+    borderRadius: 10,
+    justifyContent: 'center',
     alignItems: 'center',
+    margin: 10,
   },
   buttonText: {
     color: Colors.white,
     fontSize: RFPercentage(1.5),
   },
-  infoContainer: {
-    width: '50%',
+  patientInfoContainer: {
+    margin: 20,
+    flexDirection: 'row',
+    borderColor: '#DDDDDD',
+    borderWidth: 1,
     padding: 10,
+    marginBottom:height * 0.2,
   },
-  infoSection: {
-    width: '100%',
-    height: height * 0.45,
-  },
-  headlineView: {
-    borderRadius: 10,
-    backgroundColor: Colors.white,
-    marginBottom: height * 0.02,
-    padding: 10,
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    fontSize: RFPercentage(1.5),
-    fontWeight: 'bold',
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignContent: 'center',
-  },
-  infoText: {
-    fontSize: RFPercentage(1.5),
-    marginBottom: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignContent: 'center',
-    color: Colors.white,
-  },
-  infoTextBlack: {
-    fontSize: RFPercentage(1.5),
-    marginBottom: height * 0.01,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignContent: 'center',
+  patientInfoText: {
     color: Colors.black,
+    fontSize: RFPercentage(1.5),
+    marginBottom: height * 0.02,
   },
-  scanOutButton: {
-    backgroundColor: Colors.green,
-    padding: 10,
-    alignItems: 'center',
-  },
-  attributeView: {
-    width: '50%',
-    borderRadius: 10,
-    backgroundColor: Colors.green,
-    marginBottom: height * 0.01,
-    padding: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignContent: 'center',
-  },
-  valueView: {
-    width: '50%',
-    borderRadius: 10,
-    backgroundColor: Colors.white,
-    marginBottom: height * 0.01,
-    padding: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignContent: 'center',
-  },
-  oneRowView: {
+  actionButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 10,
-    marginBottom: height * 0.01,
+    marginTop: height * 0.2,
+    marginLeft: width * 0.5,
   },
+  actionButton: {
+    padding: 10,
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  bottomButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: height * 0.2,
+  },
+  leftContainer: {
+    marginLeft: width * 0.05,
+  },
+  mainContainer: {
+    flexDirection: 'row',
+    padding: 10,
+    alignItems: 'center',
+    backgroundColor: '#F2F5F7',
+    marginVertical: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  nameCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderColor: Colors.green,
+    borderWidth: 5,
+    backgroundColor: '#e9e9e9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  NumberCircle: {
+    marginLeft: width*0.7,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderColor: Colors.green,
+    borderWidth: 5,
+    backgroundColor: '#e9e9e9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  NumberText: {
+    fontSize: 20,
+    color: '#333',
+  },
+  circleText: {
+    fontSize: 20,
+    color: '#333',
+  },
+  basicDetails: {
+    marginLeft: width * 0.05,
+    
+  },
+  infoText: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 5,
+    
+  },
+  rightBottomText: {
+    marginTop: height * 0.06,
+    marginLeft: 'auto',
+    padding: 5,
+    backgroundColor: 'red',
+    borderRadius: 5,
+  },
+  bottomText: {
+    fontSize: RFPercentage(1.1),
+     fontWeight: 'bold',
+    color: '#fff',
+  },
+
 });
 
 export default ScanOutScreen;

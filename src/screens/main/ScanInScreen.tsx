@@ -2,137 +2,155 @@ import {
   View,
   Text,
   StyleSheet,
-  Touchable,
   TouchableOpacity,
   Dimensions,
+  FlatList,
 } from 'react-native';
-import React, {useEffect} from 'react';
-import {Colors} from '../../../constants/colours';
-import {Card} from '@rneui/themed';
-import {TextInput} from 'react-native-gesture-handler';
-import {RFPercentage} from 'react-native-responsive-fontsize';
-import SQLite, {ResultSet, Transaction} from 'react-native-sqlite-storage';
-import {useNavigation, NavigationProp} from '@react-navigation/native';
+import React, { useEffect, useState ,useCallback } from 'react';
+import { Colors } from '../../../constants/colours';
+import { Card } from '@rneui/themed';
+import { TextInput } from 'react-native';
+import { RFPercentage } from 'react-native-responsive-fontsize';
+import SQLite, { ResultSet, Transaction } from 'react-native-sqlite-storage';
+import { useNavigation ,useFocusEffect} from '@react-navigation/native';
+import { NativeStackNavigationProp, NativeStackScreenProps} from '@react-navigation/native-stack';
+import { fetchParcels } from '../../../database/DeviceSync';
+import { Parcel} from '../../../Utils/types'; // Update path as needed
+import moment from 'moment';
 
-// Enable debugging (optional)
-SQLite.DEBUG(true);
-SQLite.enablePromise(true);
 
-const db = SQLite.openDatabase({
-  name: 'ParcelDatabase.db',
-  location: 'default',
-});
+const { height, width } = Dimensions.get('window');
 
-const {height, width} = Dimensions.get('window');
 const ScanInScreen = () => {
-  const navigation = useNavigation<NavigationProp<any>>();
-
-  const createParcelsTable = async () => {
+  const [parcels, setParcels] = useState<Parcel[]>([]);
+  const [searchResults, setSearchResults] = useState<Parcel[]>([]);
+  const [barcode, setBarcode] = useState<string>('');
+  const navigation = useNavigation<NativeStackNavigationProp<any>>(); 
+  const loadParcels = async () => {
     try {
-      await new Promise<void>(async (resolve, reject) => {
-        (await db).transaction((txn: Transaction) => {
-          txn.executeSql(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='Parcels'",
-            [],
-            (tx: Transaction, res: ResultSet) => {
-              console.log('Number of tables found Parcels:', res.rows.length); // Logs the number of tables found
-              if (res.rows.length === 0) {
-                txn.executeSql(
-                  `CREATE TABLE IF NOT EXISTS Parcels (
-                      Id INTEGER  PRIMARY KEY AUTOINCREMENT,
-                      Barcode VARCHAR(50),
-                      Manifest VARCHAR(50),
-                      PatientFirstName VARCHAR(50),
-                      PatientSurname VARCHAR(50),
-                      PatientCellphone VARCHAR(50),
-                      PatientIdNumber VARCHAR(50),
-                      DueDate DATETIME,
-                      Passcode VARCHAR(10),
-                      LoaderCellphone VARCHAR(30),
-                      LastModifiedByCellphone VARCHAR(30),
-                      ScanInDatetime DATETIME,
-                      LoggedInDatetime DATETIME,
-                      ScanOutDatetime DATETIME,
-                      DeviceId INT,
-                      FacilityId INT,
-                      StatusId INT,
-                      Dirtyflag INT
-                    )`,
-                  [],
-                  () => {
-                    console.log('Parcels table created successfully');
-                    resolve();
-                  },
-                  txError => {
-                    console.error('Error creating Parcels table:', txError);
-                    reject(txError);
-                    return true;
-                  },
-                );
-              } else {
-                console.log('Parcels table already exists');
-                resolve();
-              }
-            },
-            queryError => {
-              console.error(
-                'Error checking Parcels table existence:',
-                queryError,
-              );
-              reject(queryError);
-              return true;
-            },
-          );
-        });
-      });
+      let fetchedParcels: Parcel[] = await fetchParcels(2);
+      console.log("parcel data", fetchedParcels);
+      setParcels(fetchedParcels);
+      setSearchResults(fetchedParcels);
     } catch (error) {
-      console.error('Error in transaction:', error);
+      console.error('Error loading parcels:', error);
     }
+
+  };
+
+
+  useEffect(() => {
+    loadParcels();
+  }, [navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadParcels();
+    }, [])
+  );
+
+
+  type ParcelCardProps = {
+    parcel: Parcel;
+  };
+
+  const ParcelCard: React.FC<ParcelCardProps> = ({ parcel }) => {
+
+    // Format the dates as "15 Aug 2024"
+  const formattedDueDate = moment(parcel.dueDate).format('DD MMM YYYY');
+  const formattedDOB = moment(parcel.dateOfBirth).format('DD MMM YYYY');
+
+  // Calculate the status based on the due date
+  const now = moment();
+  const dueDateMoment = moment(parcel.dueDate);
+  let statusText = '';
+
+  const daysDifference = now.diff(dueDateMoment, 'days');
+
+  if (daysDifference > 2 && daysDifference <= 7) {
+    statusText = '48 - hours overdue';
+  } else if (daysDifference > 7) {
+    statusText = '7 days overdue';
+  }
+
+    return (
+    <View style={styles.mainContainer}>
+      <View style={styles.nameCircle}>
+        <Text style={styles.circleText}>{parcel.firstName.charAt(0)}</Text>
+      </View>
+      <View style={styles.basicDetails}>
+        <Text style={styles.infoText}>Name: {parcel.title} {parcel.firstName} {parcel.surname}</Text>
+        <Text style={styles.infoText}>Barcode: {parcel.barcode}</Text>
+        <Text style={styles.infoText}>Manifest: {parcel.dispatchRef}</Text>
+        <Text style={styles.infoText}>Gender: {parcel.gender}</Text>
+      </View>
+      <View style={[styles.basicDetails, { marginTop: height * 0.03 }]}>
+        <Text style={styles.infoText}>Id Number: {parcel.idNumber}</Text>
+        <Text style={styles.infoText}>Due Date: {formattedDueDate}</Text>
+        <Text style={styles.infoText}>Consignment No.: {parcel.consignmentNo}</Text>
+      </View>
+      <View style={[styles.basicDetails, { marginTop: height * 0.03 }]}>
+        <Text style={styles.infoText}>Cellphone: {parcel.cellphone}</Text>
+        <Text style={styles.infoText}>Date Of Birth: {formattedDOB}</Text>
+      </View>
+      {statusText !== '' && (
+        <View style={[styles.rightBottomText,{backgroundColor: statusText == '7 days overdue' ? '#d9534f' : '#F89406'}]}>
+          <Text style={styles.bottomText}>{statusText}</Text>
+        </View>
+      )}
+    </View>
+  );
+};
+ 
+  const handleSearch = () => {
+    const filteredParcels = parcels.filter(parcel =>
+      parcel.barcode.toLowerCase().includes(barcode.toLowerCase())
+    );
+    setSearchResults(filteredParcels);
   };
 
   useEffect(() => {
-    createParcelsTable();
-  }, []);
+    const filteredParcels = parcels.filter(parcel =>
+      parcel.barcode.toLowerCase().includes(barcode.toLowerCase())
+    );
+    console.log("filtered parcels", filteredParcels);
+    setSearchResults(filteredParcels);
+  }, [barcode, parcels]);
+
+  const handleParcelPress = (parcel: Parcel) => {
+    navigation.navigate('ScanInManualScreen', { parcel });
+  };
+
+  const renderItem = ({ item }: { item: Parcel }) => (
+    <TouchableOpacity onPress={() => handleParcelPress(item)}>
+      <ParcelCard parcel={item} />
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.mainView}>
       <Card containerStyle={styles.cardView}>
         <View style={styles.inputTextContainer}>
-          <TextInput style={styles.textInputView} placeholder="Enter Barcode" />
-          <TouchableOpacity style={styles.buttomView}>
-            <Text style={styles.buttonText}>Scan Manual</Text>
+          <TextInput 
+            style={styles.textInputView} 
+            placeholder="Enter Barcode"
+            value={barcode}
+            onChangeText={setBarcode}
+          />
+          <TouchableOpacity 
+            style={styles.buttomView}
+            onPress={handleSearch}
+          >
+            <Text style={styles.buttonText}>Search</Text>
           </TouchableOpacity>
         </View>
       </Card>
-      <View style={styles.patientInfoContainer}>
-        <View style={styles.leftContainer}>
-          <Text style={styles.patientInfoText}>Patient Surname: THUKWANA</Text>
-          <Text style={styles.patientInfoText}>Patient Name: LINAH</Text>
-          <Text style={styles.patientInfoText}>
-            Patient ID Number: 7302270389086
-          </Text>
-          <Text style={styles.patientInfoText}>
-            Parcel Due Date: 2017-10-25T00:00:00
-          </Text>
-          <Text style={styles.patientInfoText}>
-            Patient Cellphone: 0764554196
-          </Text>
-          <Text style={styles.patientInfoText}>
-            Patient NHI Number: NHI57B82A011
-          </Text>
-        </View>
-        <View style={styles.actionButtonsContainer}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.buttonText}>✏️</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.buttonText}>❌</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.buttonText}>✔️</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+
+      <FlatList
+        data={searchResults}
+        keyExtractor={(item) => item.syncId.toString()}
+        renderItem={renderItem}
+      />
     </View>
   );
 };
@@ -207,6 +225,69 @@ const styles = StyleSheet.create({
   leftContainer: {
     marginLeft: width * 0.05,
   },
+  mainContainer: {
+    flexDirection: 'row',
+    padding: 10,
+    alignItems: 'center',
+    backgroundColor: '#F2F5F7',
+    marginVertical: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  nameCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderColor: Colors.green,
+    borderWidth: 5,
+    backgroundColor: '#e9e9e9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  NumberCircle: {
+    marginLeft: width*0.7,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderColor: Colors.green,
+    borderWidth: 5,
+    backgroundColor: '#e9e9e9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  NumberText: {
+    fontSize: 20,
+    color: '#333',
+  },
+  circleText: {
+    fontSize: 20,
+    color: '#333',
+  },
+  basicDetails: {
+    marginLeft: width * 0.05,
+    
+  },
+  infoText: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 5,
+    
+  },
+  rightBottomText: {
+    marginTop: height * 0.06,
+    marginLeft: 'auto',
+    padding: 5,
+    backgroundColor: 'red',
+    borderRadius: 5,
+  },
+  bottomText: {
+    fontSize: RFPercentage(1.1),
+     fontWeight: 'bold',
+    color: '#fff',
+  },
+
 });
 
 export default ScanInScreen;

@@ -4,7 +4,7 @@ import {Colors} from '../../../constants/colours';
 import RadioGroup, {RadioButtonProps} from 'react-native-radio-buttons-group';
 import {RFPercentage} from 'react-native-responsive-fontsize';
 import {Card} from '@rneui/base';
-import {TouchableOpacity} from 'react-native-gesture-handler';
+import {TouchableOpacity} from 'react-native';
 
 const {height, width} = Dimensions.get('window');
 const SearchPatientScreen = () => {

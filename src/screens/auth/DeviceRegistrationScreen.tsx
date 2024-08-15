@@ -18,116 +18,94 @@ import axios from 'axios';
 import BASE_URL from '../../../config';
 import DeviceInfo from 'react-native-device-info';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createDeviceTable, insertDeviceData, setupDeviceDatabase } from  '../../../database/DeviceDatabase';
+import { setupDatabase, loginToDevice, getSyncData, startBackgroundTasks }  from '../../../database/DeviceSync';
 
-const db = SQLite.openDatabase({
-  name: 'DeviceDatabase.db',
-  location: 'default',
-});
+// const db = SQLite.openDatabase({
+//   name: 'DeviceDatabase.db',
+//   location: 'default',
+// });
 
 const {height, width} = Dimensions.get('window');
-const DeviceRegistrationScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProp<any>>();
-  const [registrationKey, setRegistrationKey] = useState('');
 
-  const registerDevice = async () => {
-    if(!registrationKey){
+const DeviceRegistrationScreen: React.FC = () => {
+
+  useEffect(() => {
+    async function initializeAllDb() {
+      await setupDeviceDatabase();
+      await setupDatabase();
+
+    }
+    initializeAllDb();
+  }
+  , []);
+  const navigation = useNavigation<NavigationProp<any>>();
+  const [registrationKey, setRegistrationKey] = React.useState('');
+
+  const handleRegister = () => {
+    registerDevice(navigation, registrationKey);
+  };
+
+  const registerDevice = async (navigation: any, registrationKey: string) => {
+    if (!registrationKey) {
       Alert.alert('Alert', 'Please enter registration key');
       return;
     }
     try {
-    
       let macAddress = await DeviceInfo.getMacAddress();
-      if(!macAddress){
-        macAddress = '02:00:00:00:00:00'
+      if (!macAddress) {
+        macAddress = '02:00:00:00:00:00';
       }
-       console.log('macAddress', macAddress);
-      
-     
+      console.log('macAddress', macAddress);
+  
       const headers = {
         'registrationKey': registrationKey,
         'macAddress': macAddress,
       };
-
-    
+  
       const response = await axios.post(
         `${BASE_URL}/device/registerdevice`,
-        {}, 
+        {},
         { headers }
       );
-
-      
-      if(response.status === 200){
-         if(response.data.devicePassword){
+  
+      if (response.status === 200) {
+        if (response.data.devicePassword) {
           Alert.alert('Success', 'Device registered successfully');
-          await AsyncStorage.setItem('DevicePassword', response.data.devicePassword);
-          await AsyncStorage.setItem('DeviceId', response.data.id.toString());
+          // await AsyncStorage.setItem('DevicePassword', response.data.devicePassword);
+          // await AsyncStorage.setItem('DeviceId', response.data.id.toString());
+          // await AsyncStorage.setItem('FacilityId', response.data.facilityId.toString());
+          const deviceInfo = {
+            userId : response.data.id.toString(),
+            devicePassword: response.data.devicePassword,
+            deviceId: response.data.id.toString(),
+            facilityId: response.data.facilityId.toString(),
+          };
+          
+          await AsyncStorage.setItem('DeviceInfo', JSON.stringify(deviceInfo));
+          
+        //  await createDeviceTable();
+          await insertDeviceData(response.data);
+          console.log('Device data inserted and registered successfully');
+          await loginToDevice();
+          console.log('Logged in to device line 70 successfully');
+
+        // await createTables();
+         // await setupDatabase();
+          console.log('Tables created successfully');
+         // await getSyncData();
+          await startBackgroundTasks();
+          console.log('Background tasks started successfully');
           navigation.navigate('LoginScreen');
-         
-         }
-       
+        }
       }
     } catch (error) {
-       Alert.alert('Error', 'Error registering device, error: ' + error);
+      Alert.alert('Error', 'Error registering device, error: ' + error);
     }
   };
   
-  const createDeviceTable = async () => {
-    try {
-      await new Promise<void>(async (resolve, reject) => {
-        (await db).transaction((txn: Transaction) => {
-          txn.executeSql(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='device_table'",
-            [],
-            (tx: Transaction, res: ResultSet) => {
-              console.log('item: table device_table', res.rows.length);
-              if (res.rows.length === 0) {
-                txn.executeSql(
-                  `CREATE TABLE IF NOT EXISTS device_table (
-                      Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      DeviceName VARCHAR(100),
-                      DeviceType VARCHAR(50),
-                      DeviceModel VARCHAR(50),
-                      SerialNumber VARCHAR(50),
-                      FacilityId INTEGER,
-                      FacilityName VARCHAR(100),
-                      PartnerName VARCHAR(100),
-                      AuthToken VARCHAR(100),
-                      TokenExpireDatetime DATETIME,
-                      SyncIntervalInSec INTEGER,
-                      isActive BOOLEAN,
-                      DirtyFlag INTEGER
-                    )`,
-                  [],
-                  () => {
-                    console.log(' device table  created successfully');
-                    resolve();
-                  },
-                  error => {
-                    console.error('Error creating table:', error);
-                    reject(error);
-                    return true;
-                  },
-                );
-              } else {
-                resolve();
-              }
-            },
-            error => {
-              console.error('Error checking table existence:', error);
-              reject(error);
-              return true;
-            },
-          );
-        });
-      });
-    } catch (error) {
-      console.error('Error in transaction:', error);
-    }
-  };
-
-  useEffect(() => {
-    createDeviceTable();
-  }, []);
+ 
+ 
 
   return (
     <View style={styles.container}>
@@ -150,9 +128,7 @@ const DeviceRegistrationScreen: React.FC = () => {
             onChangeText={text => setRegistrationKey(text)}
           />
           <TouchableOpacity
-            onPress={() => {
-               registerDevice();
-            }}
+           onPress={handleRegister}
             style={styles.button}>
             <Text style={styles.buttonText}>Register Device</Text>
           </TouchableOpacity>

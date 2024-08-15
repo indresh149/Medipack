@@ -25,11 +25,13 @@ import { RFPercentage, RFValue } from "react-native-responsive-fontsize";
 import BASE_URL from '../../config';
 import DeviceInfo from 'react-native-device-info';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { deleteDatabase, stopBackgroundTasks } from '../../database/DeviceSync';
+import IconPeople from 'react-native-vector-icons/Ionicons';
 
 const {height, width} = Dimensions.get('window');
 
 const CustomDrawer = (props: any) => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();  
   const [storedEmail, setStoredEmail] = useState("indreshgoswami149@gmail.com");
   const [storedFirstName, setStoredFirstName] = useState("Indresh");
   const [storedlastName, setStoredlastName] = useState("Goswami");
@@ -49,16 +51,50 @@ const CustomDrawer = (props: any) => {
     //  navigation.navigate('ProfileScreen');
   };
 
+  const getDeviceInfo = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem('DeviceInfo');
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch (e) {
+      console.error("Error reading value", e);
+    }
+  };
+
+  const getUserInfo = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem('UserInfo');
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch (e) {
+      console.error("Error reading value", e);
+    }
+  };
+
+  useEffect(() => {
+    async function fetchEmail() {
+      const userInfo = await getUserInfo();
+      console.log('user info:', userInfo);
+      if(userInfo){
+        setStoredEmail(userInfo.email);
+        setStoredFirstName(userInfo.firstName);
+        setStoredlastName(userInfo.surname);
+      }
+    }
+    fetchEmail();
+  }, []);
+
   const deregisterDevice = async () => {
     console.log('Deregistering device');
-    const devicePassword = await AsyncStorage.getItem('DevicePassword');
+    //const devicePassword = await AsyncStorage.getItem('DevicePassword');
+    const deviceInfo = await getDeviceInfo();
+    const devicePassword = deviceInfo?.devicePassword;
     console.log('device password:', devicePassword);
     if (!devicePassword) {
       Alert.alert('Error', 'Device not registered, device password not found');
       return;
     }
 
-    const deviceId = await AsyncStorage.getItem('DeviceId');
+    //const deviceId = await AsyncStorage.getItem('DeviceId');
+    const deviceId = deviceInfo?.deviceId;
     console.log('device id:', deviceId);
     if(!deviceId){
       Alert.alert('Error', 'Device not registered, device id not found');
@@ -96,15 +132,33 @@ const CustomDrawer = (props: any) => {
       if (response.status === 200 && response.data == true) {
 
         Alert.alert('Success', 'Device deregistered successfully');
-        await AsyncStorage.removeItem('DevicePassword');
-        await AsyncStorage.removeItem('DeviceId');
+        await AsyncStorage.removeItem('DeviceInfo');
         await AsyncStorage.removeItem('AuthToken');
-        navigation.navigate('DeviceRegistrationScreen' as never);
+        await AsyncStorage.removeItem('UserInfo');
+        await deleteDatabase();
+        await stopBackgroundTasks();
+        console.log('Device deregistered and database deleted successfully');
+        navigation.replace('DeviceRegistrationScreen' as any);
       }
     } catch (error) {
       console.error('Error deregistering device:', error);
     }
   };
+
+
+ const logout = async () => {
+  try {
+ 
+        
+          await AsyncStorage.removeItem('ActualLogin');
+         
+          navigation.replace('LoginScreen' as any);
+  } catch (error) {
+    console.error('Error logging out:', error);
+  }
+ }
+
+
 
   return (
     <View style={styles.drawerMainView}>
@@ -112,8 +166,13 @@ const CustomDrawer = (props: any) => {
         {...props}
         contentContainerStyle={{backgroundColor: '#F3F3F4'}}>
        <View style={styles.upperDrawerView}>
+        <View style={styles.nameContainer}>
+        <IconPeople name="person" size={30} color={Colors.white} style={styles.iconView}/>
+        <View>
           <Text style={styles.fullName}>{storedFirstName} {storedlastName}</Text>
           <Text style={styles.emailStyle}>{storedEmail}</Text>
+          </View>
+          </View>
        </View>
         <View
           style={{
@@ -147,7 +206,7 @@ const CustomDrawer = (props: any) => {
           </View>
         </TouchableOpacity>
         <TouchableOpacity 
-        onPress={deregisterDevice}
+        onPress={logout}
         style={{paddingVertical: 3}}>
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
             {/* <IconButton
@@ -164,6 +223,27 @@ const CustomDrawer = (props: any) => {
                 marginLeft: 5,
               }}>
               Sign Out
+            </Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity 
+        onPress={deregisterDevice}
+        style={{paddingVertical: 4}}>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            {/* <IconButton
+                            icon="exit"
+                            color='#53C1BA'
+                            size={25}
+                            onPress={authCtx.logout}
+                        /> */}
+            <Text
+              style={{
+                color: '#676A6C',
+                fontSize: 15,
+                fontFamily: 'zwodrei',
+                marginLeft: 5,
+              }}>
+              Deregister Device
             </Text>
           </View>
         </TouchableOpacity>
@@ -213,6 +293,13 @@ const styles = StyleSheet.create({
     emailStyle:{
         color: Colors.white,
         fontSize: 15,
+        marginLeft: width * 0.01,
+    },
+    nameContainer:{
+        flexDirection: 'row',
+    },
+    iconView:{
+        marginTop: height * 0.09,
         marginLeft: width * 0.01,
     }
 });

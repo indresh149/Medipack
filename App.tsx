@@ -15,6 +15,15 @@ import ReturnParcelScreen from './src/screens/main/ReturnParcelScreen';
 import {openDatabase} from 'react-native-sqlite-storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoadingOverlay from './src/components/LoadingOverlay';
+import { createDeviceTable, setupDeviceDatabase } from './database/DeviceDatabase';
+import { setupDatabase, startBackgroundTasks } from './database/DeviceSync';
+import ScanInManualScreen from './src/screens/main/ScanInManual';
+import { Parcel } from './Utils/types';
+import DashboardScreen from './src/screens/main/DashboardScreen';
+import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
+import ScanOutManualScreen from './src/screens/main/ScanOutManual';
+
+
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -24,14 +33,13 @@ function MyDrawer() {
     <Drawer.Navigator
       drawerContent={props => <CustomDrawer {...props} />}
       screenOptions={{ headerTintColor: '#53C1BA' }}>
+        <Drawer.Screen name = "Dashboard" component={DashboardScreen} />
       <Drawer.Screen name="Upload Parcels" component={UploadParcelScreen} />
       <Drawer.Screen name="Scan In" component={ScanInScreen} />
       <Drawer.Screen name="Scan Out" component={ScanOutScreen} />
       <Drawer.Screen name="Search Patient" component={SearchPatientScreen} />
       <Drawer.Screen name="Return Parcels" component={ReturnParcelScreen} />
-      <Drawer.Screen name="Request Pass" component={PasswordResetScreen} />
-      <Drawer.Screen name="Device Registration" component={DeviceRegistrationScreen} />
-      <Drawer.Screen name="Login" component={LoginScreen} />
+    
     </Drawer.Navigator>
   );
 }
@@ -42,6 +50,9 @@ function AuthenticatedStack() {
       <Stack.Screen name="Drawer" component={MyDrawer} />
       <Stack.Screen name="DeviceRegistrationScreen" component={DeviceRegistrationScreen} />
       <Stack.Screen name="LoginScreen" component={LoginScreen} />
+      
+      <Stack.Screen name="ScanInManualScreen" component={ScanInManualScreen} />
+      <Stack.Screen name = "ScanOutManualScreen" component={ScanOutManualScreen} />
     </Stack.Navigator>
   );
 }
@@ -49,21 +60,50 @@ function AuthenticatedStack() {
 
 
 function Root() {
-  const [initialRoute, setInitialRoute] = useState(''); // Default to null
+  const [initialRoute, setInitialRoute] = useState('DeviceRegistrationScreen'); // Initial route
   const [isLoading, setIsLoading] = useState(true); // Loading state
+
+  const getDeviceInfo = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem('DeviceInfo');
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch (e) {
+      console.error("Error reading value", e);
+    }
+  };
+
+  const getUserInfo = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem('UserInfo');
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch (e) {
+      console.error("Error reading value", e);
+    }
+  };
 
   useEffect(() => {
     async function fetchToken() {
+      await setupDeviceDatabase();
+      await setupDatabase();
+      console.log('setup databaseses called  from root');
       try {
-        const devicePassword = await AsyncStorage.getItem('DevicePassword');
-        console.log('device password', devicePassword);
+        //const devicePassword = await AsyncStorage.getItem('DevicePassword');
+       // console.log('device password', devicePassword);
+       const deviceInfo = await getDeviceInfo();
+       const devicePassword = deviceInfo?.devicePassword;
         const authToken = await AsyncStorage.getItem('AuthToken');
+        
+        const userlogin = await getUserInfo();
         console.log('auth token', authToken);
+        console.log('user login', userlogin);
+        console.log('device password', devicePassword);
 
-        if (devicePassword != null && authToken != null) {
-          setInitialRoute('MyDrawer');
-        } else if (devicePassword != null && authToken == null) {
+        if (devicePassword != null && authToken != null && userlogin == null) {
+          await startBackgroundTasks();
           setInitialRoute('LoginScreen');
+        } else if (devicePassword != null && authToken != null && userlogin != null) {
+           await startBackgroundTasks();
+          setInitialRoute('MyDrawer');
         } else {
           setInitialRoute('DeviceRegistrationScreen');
         }
@@ -73,7 +113,7 @@ function Root() {
         setIsLoading(false); // Stop loading once async operation is complete
       }
     }
-
+   
     fetchToken();
   }, []);
 
@@ -90,6 +130,7 @@ function Root() {
         <Stack.Screen name="MyDrawer" component={AuthenticatedStack} />
         <Stack.Screen name="DeviceRegistrationScreen" component={DeviceRegistrationScreen} />
         <Stack.Screen name="LoginScreen" component={LoginScreen} />
+        
       </Stack.Navigator>
     </NavigationContainer>
   );
