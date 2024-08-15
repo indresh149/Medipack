@@ -693,7 +693,7 @@ export const updateParcel = async (
         WHERE syncId = ?`,
         [scanInDatetime, userId, parcelStatusId,passcode, 2, parcel.syncId],
         () => {
-          console.log('Parcel updated successfully after scan in or scan out');
+          console.log('Parcel updated successfully after scan in or scan out or return');
         }
       );
     });
