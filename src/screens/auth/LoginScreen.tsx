@@ -1,5 +1,5 @@
 import {useNavigation} from '@react-navigation/native';
-import React, {useEffect, useState} from 'react';
+import React, { useState} from 'react';
 import {
   View,
   Text,
@@ -12,22 +12,11 @@ import {
   Alert,
 } from 'react-native';
 import {Colors} from '../../../constants/colours';
-
-import SQLite, {ResultSet, Transaction} from 'react-native-sqlite-storage';
 import {RFPercentage} from 'react-native-responsive-fontsize';
-import axios from 'axios';
-import BASE_URL from '../../../config';
-import DeviceInfo from 'react-native-device-info';
-import BackgroundService from 'react-native-background-actions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { findUser, printAllUsers } from '../../../database/DeviceSync';
 
-SQLite.DEBUG(true);
-SQLite.enablePromise(true);
 
-const db = SQLite.openDatabase({
-  name: 'mydatabase.db',
-  location: 'default',
-});
 
 const {height, width} = Dimensions.get('window');
 const LoginScreen = () => {
@@ -39,182 +28,39 @@ const LoginScreen = () => {
     setIsChecked(!isChecked);
   };
 
-  const loginToDevice = async () => {
-    console.log('Logging in to device');
-    const devicePassword = await AsyncStorage.getItem('DevicePassword');
-    console.log('device password:', devicePassword);
-    if (!devicePassword) {
-      Alert.alert('Error', 'Device not registered, device password not found');
-      return;
-    }
-
-    const deviceId = await AsyncStorage.getItem('DeviceId');
-    console.log('device id:', deviceId);
-    if(!deviceId){
-      Alert.alert('Error', 'Device not registered, device id not found');
-      return;
-    }
-
-    let macAddress = await DeviceInfo.getMacAddress();
-    if(!macAddress){
-      macAddress = '02:00:00:00:00:00'
-    }
-     console.log('macAddress', macAddress);
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
 
-    try {
-      const response = await axios.post(
-        `${BASE_URL}/device/devicelogin`,
-        {},
-        {
-          headers: {
-            deviceId: deviceId,
-            devicePassword: devicePassword,
-            macAddress: macAddress,
-          },
-        }
-      );
-      console.log(response.data);
-      console.log(response.status);
-      if (response.status === 200) {
-        if(response.data){
-          await AsyncStorage.setItem('AuthToken', response.data);
-          Alert.alert('Success', 'Logged in to device successfully');
-          navigation.navigate('MyDrawer' as never);
-        }
-        
+  const handleLogin = async () => {
+      if(identifier === '' || password === ''){
+        setError('Please enter credentials');
+        return;
       }
-     
-    } catch (error) {
-      console.error('Error logging in to device:', error);
 
-    }
-  };
-
-  const createUsersTable = async () => {
     try {
-      await new Promise<void>(async (resolve, reject) => {
-        (await db).transaction((txn: Transaction) => {
-          txn.executeSql(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='Users'",
-            [],
-            (tx: Transaction, res: ResultSet) => {
-              console.log('Item table users', res.rows.length);
-              if (res.rows.length === 0) {
-                txn.executeSql(
-                  `CREATE TABLE IF NOT EXISTS Users (
-                      Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      FirstName VARCHAR(50),
-                      Surname VARCHAR(50),
-                      MiddleName VARCHAR(50),
-                      LoginId VARCHAR(50),
-                      Password VARCHAR(50),
-                      Cellphone VARCHAR(50),
-                      Email VARCHAR(100),
-                      Gender VARCHAR(10),
-                      FacilityRole VARCHAR(50),
-                      RoleId INTEGER,
-                      isActive BOOLEAN,
-                      DirtyFlag INTEGER
-                    )`,
-                  [],
-                  () => {
-                    console.log('Users table created successfully');
-                    resolve();
-                  },
-                  txError => {
-                    console.error('Error creating Users table:', txError);
-                    reject(txError);
-                    return true;
-                  },
-                );
-              } else {
-                console.log('Users table already exists');
-                resolve();
-              }
-            },
-            queryError => {
-              console.error(
-                'Error checking Users table existence:',
-                queryError,
-              );
-              reject(queryError);
-              return true;
-            },
-          );
-        });
-      });
-    } catch (error) {
-      console.error('Error in transaction:', error);
-    }
-  };
+      await printAllUsers();
+      const userExists = await findUser(identifier, password);
+      console.log('userExists', userExists);
+      if (userExists) {
+        console.log('Login successful line 57');
+        await AsyncStorage.setItem('UserInfo', JSON.stringify(userExists));
+       
 
-
-  const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(() => resolve(), time));
-
-  // Define your task
-  const fetchDataTask = async (taskDataArguments: any) => {
-    const { delay } = taskDataArguments;
-  
-    // Infinite loop task
-    await new Promise<void>(async (resolve) => {
-      while (BackgroundService.isRunning()) {
-        try {
-          // Replace with your API endpoint and request details
-          const response = await axios.get('https://your-api-endpoint.com/data');
-          console.log('API response:', response.data);
-        } catch (error) {
-          console.error('API request error:', error);
-        }
-  
-        await sleep(delay);
+        console.log('Actual login set to true');
+        navigation.navigate('MyDrawer' as never);
+        console.log('Navigated to MyDrawer');
+        // Navigate to the next screen or do whatever on successful login
+      } else {
+        setError('Invalid credentials');
+        Alert.alert('Invalid credentials');
       }
-    });
-  };
-  
-  // Options for the background task
-  const options = {
-    taskName: 'API Fetcher',
-    taskTitle: 'Fetching Data in Background',
-    taskDesc: 'Running a background task to fetch data every 30 seconds.',
-    taskIcon: {
-      name: 'ic_launcher', // Icon name
-      type: 'mipmap', // Icon type
-    },
-    color: '#ff00ff', // Notification color
-    linkingURI: 'yourSchemeHere://chat/jane', // Deep linking URI
-    parameters: {
-      delay: 3000, // Delay of 30 seconds
-    },
-  };
-  
-  const startBackgroundService = async () => {
-    try {
-      console.log('Starting background service...');
-      await BackgroundService.start(fetchDataTask, options);
-  
-      // Update the notification (only on Android)
-      await BackgroundService.updateNotification({ taskDesc: 'Fetching data every 30 seconds...' });
-    } catch (error) {
-      console.error('Error starting background service:', error);
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('An error occurred during login');
     }
   };
-  
-  const stopBackgroundService = async () => {
-    try {
-      console.log('Stopping background service...');
-      await BackgroundService.stop();
-    } catch (error) {
-      console.error('Error stopping background service:', error);
-    }
-  };
-
-  
-  useEffect(() => {
-    createUsersTable();
-    // startBackgroundService();
-    stopBackgroundService();
-  }, []);
 
   return (
     <View style={styles.container}>
@@ -232,13 +78,17 @@ const LoginScreen = () => {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Email"
+              placeholder="User ID / Cellphone / Email"
+              value={identifier}
+              onChangeText={setIdentifier}
               placeholderTextColor="#555"
               keyboardType="email-address"
             />
             <TextInput
               style={styles.input}
               placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
               placeholderTextColor="#555"
               secureTextEntry
             />
@@ -258,7 +108,8 @@ const LoginScreen = () => {
           <TouchableOpacity
             onPress={() => {
              // navigation.navigate('DeviceRegistrationScreen' as never);
-             loginToDevice();
+
+              handleLogin();
             }}
             style={styles.button}>
             <Text style={styles.buttonText}>Login</Text>
@@ -314,7 +165,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     marginBottom: height * 0.02,
-    color: Colors.white,
+   color: Colors.black,
   },
   checkboxContainer: {
     flexDirection: 'row',

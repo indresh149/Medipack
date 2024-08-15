@@ -1,6 +1,6 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
-function LoadingOverlay({ message }) {
+function LoadingOverlay({ message }: { message: string }) {
     return (
         <View style={styles.rootContainer}>
             <Text style={styles.message}>{message}</Text>
