@@ -669,6 +669,49 @@ export const fetchParcels = async (id:any): Promise<any[]> => {
   });
 };
 
+export const fetchParcelsFromLastWeek = async (id: any): Promise<any[]> => {
+  return new Promise((resolve, reject) => {
+    const today = new Date();
+    const lastWeek = new Date();
+    lastWeek.setDate(today.getDate() - 7);
+
+    console.log('Today:', today.toISOString());
+    console.log('Last week:', lastWeek.toISOString());
+
+    db.transaction((txn) => {
+      txn.executeSql(
+        'SELECT * FROM parcel_table WHERE parcelStatusId = ? AND dueDate BETWEEN ? AND ?',
+        [id, lastWeek.toISOString(), today.toISOString()],
+        (tx, results) => {
+          let parcels = [];
+          for (let i = 0; i < results.rows.length; i++) {
+            parcels.push(results.rows.item(i));
+          }
+
+          // Sorting the parcels based on scanInDatetime and firstName
+          parcels.sort((a, b) => {
+            const dateA = new Date(a.scanInDatetime);
+            const dateB = new Date(b.scanInDatetime);
+
+            if (dateA > dateB) return -1;
+            if (dateA < dateB) return 1;
+
+            // If scanInDatetime are the same, sort by firstName
+            return a.firstName.localeCompare(b.firstName);
+          });
+
+          resolve(parcels);
+        },
+        (error) => {
+          console.error('Error fetching parcels:', error);
+          reject(error);
+        }
+      );
+    });
+  });
+};
+
+
 export const updateParcel = async (
   parcel: Parcel,
   userId: number,
@@ -857,7 +900,7 @@ type: 'mipmap',
 color: '#ff00ff',
 linkingURI: 'yourappscheme://sync', // Custom scheme to open your app when the notification is tapped
 parameters: {
-delay: 20000, // Delay in milliseconds (30 seconds)
+delay: 37000, // Delay in milliseconds (30 seconds)
 },
 };
 

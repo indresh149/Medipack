@@ -23,6 +23,19 @@ import DashboardScreen from './src/screens/main/DashboardScreen';
 import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
 import ScanOutManualScreen from './src/screens/main/ScanOutManual';
 import ReturnParcelDetailsScreen from './src/screens/main/ReturnParcelDetailsScreen';
+import { getDeviceInfo, getUserInfo } from './Utils/utils';
+import ScanInOptions from './src/screens/main/ScanInOptions';
+import ScanOutOptions from './src/screens/main/ScanOutOptions';
+import AutoScanInScreen from './src/screens/main/ScanIn/AutoScanInScreen';
+import AutoScanOutScreen from './src/screens/main/ScanOut/AutoScanOutScreen';
+import ScanOutParcelReturned from './src/screens/main/Reports/ScanOutParcelReturned';
+import PendingScanInParcel from './src/screens/main/Reports/PendingScanInParcel';
+import OverdueParcel from './src/screens/main/Reports/OverdueParcel';
+import OneWeekScannedOut from './src/screens/main/Reports/OneWeekScannedOut';
+import OneWeekSummary from './src/screens/main/Reports/OneWeekSummary';
+import ProfileScreen from './src/screens/main/ProfileScreen';
+import BarcodeScanner from './src/screens/main/ScanIn/BarcodeScanner';
+import ScanOutAutoDetails from './src/screens/main/ScanOut/ScanOutAutoDetails';
 
 
 
@@ -35,12 +48,12 @@ function MyDrawer() {
       drawerContent={props => <CustomDrawer {...props} />}
       screenOptions={{ headerTintColor: '#53C1BA' }}>
         <Drawer.Screen name = "Dashboard" component={DashboardScreen} />
-      <Drawer.Screen name="Upload Parcels" component={UploadParcelScreen} />
-      <Drawer.Screen name="Scan In" component={ScanInScreen} />
-      <Drawer.Screen name="Scan Out" component={ScanOutScreen} />
+     
+      <Drawer.Screen name = "Scan In" component={ScanInOptions} />
+      <Drawer.Screen name = "Scan Out" component={ScanOutOptions} />
       <Drawer.Screen name="Search Patient" component={SearchPatientScreen} />
       <Drawer.Screen name="Return Parcels" component={ReturnParcelScreen} />
-    
+   
     </Drawer.Navigator>
   );
 }
@@ -51,10 +64,20 @@ function AuthenticatedStack() {
       <Stack.Screen name="Drawer" component={MyDrawer} />
       <Stack.Screen name="DeviceRegistrationScreen" component={DeviceRegistrationScreen} />
       <Stack.Screen name="LoginScreen" component={LoginScreen} />
-      
+      <Stack.Screen name = "ScanInScreen" component={ScanInScreen} />
+      <Stack.Screen name = "ScanOutScreen" component={ScanOutScreen} />
       <Stack.Screen name="ScanInManualScreen" component={ScanInManualScreen} />
       <Stack.Screen name = "ScanOutManualScreen" component={ScanOutManualScreen} />
+      <Stack.Screen name = "AutoScanInScreen" component={AutoScanInScreen} />
+      <Stack.Screen name = "AutoScanOutScreen" component={AutoScanOutScreen} />
       <Stack.Screen name = "ReturnParcelDetailsScreen" component={ReturnParcelDetailsScreen} />
+      <Stack.Screen name = "ScanOutParcelRturnedReportScreen" component={ScanOutParcelReturned} />
+      <Stack.Screen name = "PendingScainInParcelScreen" component={PendingScanInParcel} />
+      <Stack.Screen name='OverDueParcelReportScreen' component={OverdueParcel} />
+      <Stack.Screen name = "OneWeekScannedOutReportScreen" component={OneWeekScannedOut} />
+      <Stack.Screen name = "OneWeekSummaryReportScreen" component={OneWeekSummary} />
+      <Stack.Screen name = "ProfileScreen" component={ProfileScreen} />
+      <Stack.Screen name = "ScanOutAutoDetails" component={ScanOutAutoDetails} />
     </Stack.Navigator>
   );
 }
@@ -65,23 +88,23 @@ function Root() {
   const [initialRoute, setInitialRoute] = useState('DeviceRegistrationScreen'); // Initial route
   const [isLoading, setIsLoading] = useState(true); // Loading state
 
-  const getDeviceInfo = async () => {
-    try {
-      const jsonValue = await AsyncStorage.getItem('DeviceInfo');
-      return jsonValue != null ? JSON.parse(jsonValue) : null;
-    } catch (e) {
-      console.error("Error reading value", e);
-    }
-  };
+  // const getDeviceInfo = async () => {
+  //   try {
+  //     const jsonValue = await AsyncStorage.getItem('DeviceInfo');
+  //     return jsonValue != null ? JSON.parse(jsonValue) : null;
+  //   } catch (e) {
+  //     console.error("Error reading value", e);
+  //   }
+  // };
 
-  const getUserInfo = async () => {
-    try {
-      const jsonValue = await AsyncStorage.getItem('UserInfo');
-      return jsonValue != null ? JSON.parse(jsonValue) : null;
-    } catch (e) {
-      console.error("Error reading value", e);
-    }
-  };
+  // const getUserInfo = async () => {
+  //   try {
+  //     const jsonValue = await AsyncStorage.getItem('UserInfo');
+  //     return jsonValue != null ? JSON.parse(jsonValue) : null;
+  //   } catch (e) {
+  //     console.error("Error reading value", e);
+  //   }
+  // };
 
   useEffect(() => {
     async function fetchToken() {

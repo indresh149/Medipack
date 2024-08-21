@@ -1,4 +1,5 @@
 {
     "colorWheel.settings.workspaceColor": "hsl(86,50%,20%)",
-    "typescript.tsdk": "node_modules/typescript/lib"
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

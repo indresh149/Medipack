@@ -9,24 +9,25 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import moment from 'moment';
 import { Parcel } from '../../../Utils/types';
+import { getUserInfo } from '../../../Utils/utils';
 
 
 const { height, width } = Dimensions.get('window');
 
 const ScanInManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({ route }) => {
-  const { parcel } = route.params as { parcel: Parcel };
+  const { parcel } = route?.params as { parcel: Parcel };
   const navigation = useNavigation<NativeStackNavigationProp<any>>(); // Add parentheses to call the function
 
  
 
-  const getUserInfo = async () => {
-    try {
-      const jsonValue = await AsyncStorage.getItem('UserInfo');
-      return jsonValue != null ? JSON.parse(jsonValue) : null;
-    } catch (e) {
-      console.error("Error reading value", e);
-    }
-  };
+  // const getUserInfo = async () => {
+  //   try {
+  //     const jsonValue = await AsyncStorage.getItem('UserInfo');
+  //     return jsonValue != null ? JSON.parse(jsonValue) : null;
+  //   } catch (e) {
+  //     console.error("Error reading value", e);
+  //   }
+  // };
 
   const [barcode, setBarcode] = useState<string>('');
 
@@ -80,7 +81,7 @@ const ScanInManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({ route 
             style={styles.buttomView}
             onPress={handleManualScanIn}
           >
-            <Text style={styles.buttonText}>Manual ScanIn</Text>
+            <Text style={styles.buttonText}>Manual Scan In</Text>
           </TouchableOpacity>
         </View>
       </Card>

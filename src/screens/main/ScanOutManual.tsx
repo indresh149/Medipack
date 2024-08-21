@@ -18,6 +18,7 @@ import moment from 'moment';
 import { Parcel } from '../../../Utils/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { updateParcel } from '../../../database/DeviceSync';
+import { getUserInfo } from '../../../Utils/utils';
 
 const {height, width} = Dimensions.get('window');
 
@@ -28,14 +29,14 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({ route
   const [idNumber, setIdNumber] = useState('');
   const [pin, setPin] = useState('');
 
-  const getUserInfo = async () => {
-    try {
-      const jsonValue = await AsyncStorage.getItem('UserInfo');
-      return jsonValue != null ? JSON.parse(jsonValue) : null;
-    } catch (e) {
-      console.error("Error reading value", e);
-    }
-  };
+  // const getUserInfo = async () => {
+  //   try {
+  //     const jsonValue = await AsyncStorage.getItem('UserInfo');
+  //     return jsonValue != null ? JSON.parse(jsonValue) : null;
+  //   } catch (e) {
+  //     console.error("Error reading value", e);
+  //   }
+  // };
 
   const radioButtons: RadioButtonProps[] = useMemo(
     () => [
@@ -94,7 +95,6 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({ route
     Alert.alert('Parcel scanned out successfully');
        navigation.replace('Drawer', { screen: 'Scan Out' });;
       console.log('Parcel scanned out successfully');
-      // Optionally, navigate back or show a success message
     } catch (error) {
       console.error('Error during manual scan-out:', error);
     }
