@@ -1,7 +1,7 @@
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {Card} from '@rneui/themed';
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   Dimensions,
   FlatList,
@@ -13,23 +13,25 @@ import {
 } from 'react-native';
 import {RFPercentage} from 'react-native-responsive-fontsize';
 import {Colors} from '../../../../constants/colours';
-//import { fetchParcels, fetchParcelsFromLastWeek } from '../../../../database/DeviceSync';
+//import { fetchParcels } from '../../../database/DeviceSync';
 import moment from 'moment';
+import RadioGroup, {RadioButtonProps} from 'react-native-radio-buttons-group';
 import {Parcel} from '../../../../Utils/types'; // Update path as needed
-import {fetchParcelsFromLastWeek} from '../../../../database/DatabseOperations';
+import {fetchParcels} from '../../../../database/DatabseOperations';
 
 const {height, width} = Dimensions.get('window');
 
-const ScanOutParcelReturned = () => {
+const ReturnParcelScreen = () => {
   const [parcels, setParcels] = useState<Parcel[]>([]);
   const [searchResults, setSearchResults] = useState<Parcel[]>([]);
   const [barcode, setBarcode] = useState<string>('');
-  const [noOfParcels, setNoOfParcels] = useState<number>(0);
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const [filteredResults, setFilteredResults] = useState<Parcel[]>([]);
+  const [selectedId, setSelectedId] = useState<string>('1');
+
   const loadParcels = async () => {
     try {
-      let fetchedParcels: Parcel[] = await fetchParcelsFromLastWeek(6);
-      setNoOfParcels(fetchedParcels.length);
+      let fetchedParcels: Parcel[] = await fetchParcels(3);
       // console.log("parcel data scan out ", fetchedParcels);
       setParcels(fetchedParcels);
       setSearchResults(fetchedParcels);
@@ -85,14 +87,19 @@ const ScanOutParcelReturned = () => {
         </View>
         <View style={[styles.basicDetails, {marginTop: height * 0.03}]}>
           <Text style={styles.infoText}>Id Number: {parcel.idNumber}</Text>
-          <Text style={styles.infoText}>Due Date: {formattedDueDate}</Text>
+          <Text style={styles.infoText}>
+            Due Date:{' '}
+            {formattedDueDate === 'Invalid date' ? '' : formattedDueDate}
+          </Text>
           <Text style={styles.infoText}>
             Consignment No.: {parcel.consignmentNo}
           </Text>
         </View>
         <View style={[styles.basicDetails, {marginTop: height * 0.03}]}>
           <Text style={styles.infoText}>Cellphone: {parcel.cellphone}</Text>
-          <Text style={styles.infoText}>Date Of Birth: {formattedDOB}</Text>
+          <Text style={styles.infoText}>
+            Date Of Birth: {formattedDOB === 'Invalid date' ? '' : formattedDOB}
+          </Text>
         </View>
         {statusText !== '' && (
           <View
@@ -110,74 +117,115 @@ const ScanOutParcelReturned = () => {
     );
   };
 
-  const handleSearch = () => {
-    const lowerCaseQuery = barcode.toLowerCase(); // Assuming you're using 'barcode' as the search input variable
+  const applyFilter = (parcels: Parcel[], filter: String) => {
+    const now = moment();
+    let filtered = parcels;
 
-    const filteredParcels = parcels.filter(
-      parcel =>
-        parcel.barcode.toLowerCase().includes(lowerCaseQuery) ||
-        parcel.firstName.toLowerCase().includes(lowerCaseQuery) ||
-        parcel.surname.toLowerCase().includes(lowerCaseQuery) ||
-        parcel.cellphone.toLowerCase().includes(lowerCaseQuery) ||
-        parcel.idNumber.toLowerCase().includes(lowerCaseQuery),
+    if (filter === '2') {
+      filtered = parcels.filter(parcel => {
+        const dueDateMoment = moment(parcel.dueDate);
+        const daysDifference = now.diff(dueDateMoment, 'days');
+        return daysDifference > 2 && daysDifference <= 7;
+      });
+    } else if (filter === '3') {
+      filtered = parcels.filter(parcel => {
+        const dueDateMoment = moment(parcel.dueDate);
+        const daysDifference = now.diff(dueDateMoment, 'days');
+        return daysDifference > 7;
+      });
+    }
+
+    setFilteredResults(filtered);
+    handleSearch(barcode, filtered);
+  };
+
+  const handleSearch = (query: string, data: Parcel[] = searchResults) => {
+    const lowerCaseQuery = query.toLowerCase();
+    const filteredParcels = data.filter(parcel =>
+      parcel.barcode.toLowerCase().includes(lowerCaseQuery),
     );
-
-    setSearchResults(filteredParcels);
+    setFilteredResults(filteredParcels);
   };
 
   useEffect(() => {
-    const lowerCaseQuery = barcode.toLowerCase(); // Assuming you're using 'barcode' as the search input variable
+    applyFilter(searchResults, selectedId);
+  }, [selectedId, searchResults]);
 
-    const filteredParcels = parcels.filter(
-      parcel =>
-        parcel.barcode.toLowerCase().includes(lowerCaseQuery) ||
-        parcel.firstName.toLowerCase().includes(lowerCaseQuery) ||
-        parcel.surname.toLowerCase().includes(lowerCaseQuery) ||
-        parcel.cellphone.toLowerCase().includes(lowerCaseQuery) ||
-        parcel.idNumber.toLowerCase().includes(lowerCaseQuery),
+  useEffect(() => {
+    const lowerCaseQuery = barcode.toLowerCase();
+
+    const filteredParcels = parcels.filter(parcel =>
+      parcel.barcode.toLowerCase().includes(lowerCaseQuery),
     );
 
-    //console.log("filtered parcels", filteredParcels);
     setSearchResults(filteredParcels);
   }, [barcode, parcels]);
 
   const handleParcelPress = (parcel: Parcel) => {
-    navigation.navigate('ScanOutManualScreen', {parcel});
+    navigation.navigate('ReturnParcelDetailsScreen', {parcel});
   };
 
   const renderItem = ({item}: {item: Parcel}) => (
-    <TouchableOpacity disabled={true} onPress={() => handleParcelPress(item)}>
+    <TouchableOpacity onPress={() => handleParcelPress(item)}>
       <ParcelCard parcel={item} />
     </TouchableOpacity>
+  );
+
+  const radioButtons: RadioButtonProps[] = useMemo(
+    () => [
+      {
+        id: '1',
+        label: 'All',
+        value: 'option1',
+      },
+      {
+        id: '2',
+        label: '48 hours overdue',
+        value: 'option2',
+      },
+      {
+        id: '3',
+        label: '7 days overdue',
+        value: 'option3',
+      },
+    ],
+    [],
   );
 
   return (
     <View style={styles.mainView}>
       <Card containerStyle={styles.cardView}>
-        <View>
-          <View style={styles.nameCircle}>
-            <Text style={styles.circleText}>{noOfParcels}</Text>
-          </View>
-          <View style={styles.inputTextContainer}>
-            <View>
-              <Text>Search by Name or Cellphone or Id Number or Barcode</Text>
-            </View>
-
+        <View style={styles.inputTextContainer}>
+          <View style={styles.leftContainer}>
+            <Text>Search by Barcode</Text>
             <TextInput
               style={styles.textInputView}
-              placeholder="            Enter Search Text"
+              placeholder="Enter Barcode"
               value={barcode}
-              onChangeText={setBarcode}
+              onChangeText={text => {
+                setBarcode(text);
+                handleSearch(text);
+              }}
             />
-            <TouchableOpacity style={styles.buttomView} onPress={handleSearch}>
+            <TouchableOpacity
+              style={styles.buttonView}
+              onPress={() => handleSearch(barcode)}>
               <Text style={styles.buttonText}>Search</Text>
             </TouchableOpacity>
+          </View>
+          <View style={styles.rightContainer}>
+            <RadioGroup
+              radioButtons={radioButtons}
+              onPress={setSelectedId}
+              selectedId={selectedId}
+              layout="row"
+            />
           </View>
         </View>
       </Card>
 
       <FlatList
-        data={searchResults}
+        data={filteredResults}
         keyExtractor={item => item.syncId.toString()}
         renderItem={renderItem}
       />
@@ -197,11 +245,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   inputTextContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    width: '100%',
+    alignContent: 'center',
   },
   textInputView: {
-    width: '20%',
+    width: '90%',
     height: height * 0.08,
     backgroundColor: Colors.white,
     borderRadius: 10,
@@ -209,8 +260,8 @@ const styles = StyleSheet.create({
     margin: 10,
     paddingLeft: 10,
   },
-  buttomView: {
-    width: '15%',
+  buttonView: {
+    width: '20%',
     height: height * 0.08,
     backgroundColor: Colors.green,
     borderRadius: 10,
@@ -221,6 +272,27 @@ const styles = StyleSheet.create({
   buttonText: {
     color: Colors.white,
     fontSize: RFPercentage(1.5),
+  },
+  radioLabel: {
+    fontSize: RFPercentage(2),
+    color: Colors.black,
+    marginVertical: 10,
+  },
+  leftContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    width: '50%',
+    alignContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+  },
+  rightContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    width: '50%',
+    alignContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
   },
   patientInfoContainer: {
     margin: 20,
@@ -251,9 +323,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: height * 0.2,
   },
-  leftContainer: {
-    marginLeft: width * 0.05,
-  },
+
   mainContainer: {
     flexDirection: 'row',
     padding: 10,
@@ -316,4 +386,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ScanOutParcelReturned;
+export default ReturnParcelScreen;

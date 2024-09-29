@@ -1,69 +1,96 @@
-import React, { useMemo, useState } from 'react';
+import {useNavigation} from '@react-navigation/native';
 import {
-  StyleSheet,
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  Dimensions,
-  Alert,
-} from 'react-native';
-import { Colors } from '../../../constants/colours';
-import RadioGroup, { RadioButtonProps } from 'react-native-radio-buttons-group';
-import { RFPercentage } from 'react-native-responsive-fontsize';
-import { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+  NativeStackNavigationProp,
+  NativeStackScreenProps,
+} from '@react-navigation/native-stack';
 import moment from 'moment';
-import { Parcel } from '../../../Utils/types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { updateParcel } from '../../../database/DeviceSync';
-import { getUserInfo } from '../../../Utils/utils';
+import React from 'react';
+import {
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import {RFPercentage} from 'react-native-responsive-fontsize';
+import {useToast} from 'react-native-toast-notifications';
+import uuid from 'react-native-uuid';
+import {Parcel, SmsData} from '../../../../Utils/types';
+import {Colors} from '../../../../constants/colours';
+//import { updateParcel } from '../../../database/DeviceSync';
+import {getUserInfo} from '../../../../Utils/utils';
+import {updateParcel} from '../../../../database/DatabseOperations';
+import {insertSmsData} from '../../../../database/DeviceDatabase';
+import {getDeviceInfo} from '../../../../database/DeviceSync';
 
-const { height, width } = Dimensions.get('window');
+const {height, width} = Dimensions.get('window');
 
-const ReturnParcelDetailsScreen: React.FC<NativeStackScreenProps<any, any>> = ({ route }) => {
-  const { parcel } = route.params as { parcel: Parcel };
+const ReturnParcelDetailsScreen: React.FC<NativeStackScreenProps<any, any>> = ({
+  route,
+}) => {
+  const {parcel} = route.params as {parcel: Parcel};
   console.log('Parcel:', parcel);
+  const toast = useToast();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  
-
-  // const getUserInfo = async () => {
-  //   try {
-  //     const jsonValue = await AsyncStorage.getItem('UserInfo');
-  //     return jsonValue != null ? JSON.parse(jsonValue) : null;
-  //   } catch (e) {
-  //     console.error("Error reading value", e);
-  //   }
-  // };
-
-
 
   const handleManualReturn = async () => {
-
-
-
     const userInfo = await getUserInfo();
     const currentUserId = userInfo?.userId;
+    const deviceInfo = await getDeviceInfo();
+
+    const deviceId = deviceInfo?.deviceId;
+    const facilityId = deviceInfo?.facilityId;
+    const UUID = uuid.v4().toString().toUpperCase();
+    const returnDatetime = new Date().toISOString();
+
+    const smsData: SmsData = {
+      syncId: UUID.toString(),
+      parcelId: parcel.parcelId,
+      cellphone: parcel.cellphone,
+      smsCreatedDateTime: returnDatetime,
+      deviceId: deviceId,
+      facilityId: facilityId,
+      smsTypeId: 3,
+      dirtyFlag: 1,
+    };
+
     try {
+      await updateParcel(
+        parcel,
+        currentUserId,
+        'scanOutDatetime',
+        'scanOutByUserId',
+        6,
+        parcel.passcode,
+      );
+      await insertSmsData(smsData);
+      //   updateCloudOnModifieddata();
 
-      await updateParcel(parcel, currentUserId, "scanOutDatetime", "scanOutByUserId", 6, parcel.passcode);
-
-
-      Alert.alert('Parcel returned successfully');
-      navigation.replace('Drawer', { screen: 'Return Parcels' });;
-      console.log('Parcel returned  successfully');
-      
+      // Alert.alert('Parcel returned successfully');
+      toast.show('Parcel returned successfully', {
+        type: 'success',
+        placement: 'top',
+        duration: 5000,
+      });
+      navigation.replace('Drawer', {screen: 'Return Parcels'});
+      // console.log('Parcel returned  successfully');
     } catch (error) {
-      console.error('Error during manual returned :', error);
+      // console.error('Error during manual returned :', error);
+      toast.show('Error during manual parcel returned', {
+        type: 'error',
+        placement: 'top',
+        duration: 5000,
+      });
     }
   };
-
 
   // Format the dates as "15 Aug 2024"
   const formattedDueDate = moment(parcel.dueDate).format('DD MMM YYYY');
   const formattedDOB = moment(parcel.dateOfBirth).format('DD MMM YYYY');
-  const fromattedScanInDate = moment(parcel?.scanInDatetime).format('DD MMM YYYY, h:mm:ss a');;
+  const fromattedScanInDate = moment(parcel?.scanInDatetime).format(
+    'DD MMM YYYY, h:mm:ss a',
+  );
 
   // Calculate the status based on the due date
   const now = moment();
@@ -81,33 +108,10 @@ const ReturnParcelDetailsScreen: React.FC<NativeStackScreenProps<any, any>> = ({
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.inputContainer}>
-        {/* <View style={styles.radioGroup}>
-          <RadioGroup
-            radioButtons={radioButtons}
-            onPress={setSelectedId}
-            selectedId={selectedId}
-            layout="row"
-          />
-        </View>
-        {selectedId === '1' && (
-          <TextInput
-            style={styles.input}
-            placeholder="Enter ID Number / Passport"
-            value={idNumber}
-            onChangeText={setIdNumber}
-          />
-        )}
-        {selectedId === '2' && (
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Pin"
-            value={pin}
-            onChangeText={setPin}
-          />
-        )} */}
-        <TouchableOpacity style={styles.searchButton} onPress={handleManualReturn}>
-          <Text style={styles.buttonText}>RETURN DUE TO NON-COLLECTION
-          </Text>
+        <TouchableOpacity
+          style={styles.searchButton}
+          onPress={handleManualReturn}>
+          <Text style={styles.buttonText}>RETURN DUE TO NON-COLLECTION</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.infoContainer}>
@@ -120,7 +124,9 @@ const ReturnParcelDetailsScreen: React.FC<NativeStackScreenProps<any, any>> = ({
               <Text style={styles.infoText}>Name</Text>
             </View>
             <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>{parcel.title} {parcel.firstName} {parcel.surname}</Text>
+              <Text style={styles.infoTextBlack}>
+                {parcel.title} {parcel.firstName} {parcel.surname}
+              </Text>
             </View>
           </View>
           <View style={styles.oneRowView}>
@@ -136,7 +142,9 @@ const ReturnParcelDetailsScreen: React.FC<NativeStackScreenProps<any, any>> = ({
               <Text style={styles.infoText}>Date Of Birth</Text>
             </View>
             <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>{formattedDOB}</Text>
+              <Text style={styles.infoTextBlack}>
+                {formattedDOB === 'Invalid date' ? '' : formattedDOB}
+              </Text>
             </View>
           </View>
           <View style={styles.oneRowView}>
@@ -148,7 +156,7 @@ const ReturnParcelDetailsScreen: React.FC<NativeStackScreenProps<any, any>> = ({
             </View>
           </View>
         </View>
-        <View style={[styles.infoSection, { marginBottom: height * 0.18 }]}>
+        <View style={[styles.infoSection, {marginBottom: height * 0.18}]}>
           <View style={styles.headlineView}>
             <Text style={styles.sectionTitle}>MEDICATION INFORMATION</Text>
           </View>
@@ -174,7 +182,9 @@ const ReturnParcelDetailsScreen: React.FC<NativeStackScreenProps<any, any>> = ({
               <Text style={styles.infoText}>Due Date</Text>
             </View>
             <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>{formattedDueDate}</Text>
+              <Text style={styles.infoTextBlack}>
+                {formattedDueDate === 'Invalid date' ? '' : formattedDueDate}
+              </Text>
             </View>
           </View>
           <View style={styles.oneRowView}>
@@ -182,7 +192,11 @@ const ReturnParcelDetailsScreen: React.FC<NativeStackScreenProps<any, any>> = ({
               <Text style={styles.infoText}>Scan In Date Time</Text>
             </View>
             <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>{fromattedScanInDate}</Text>
+              <Text style={styles.infoTextBlack}>
+                {fromattedScanInDate === 'Invalid date'
+                  ? ''
+                  : fromattedScanInDate}
+              </Text>
             </View>
           </View>
           <View style={styles.oneRowView}>
@@ -202,7 +216,6 @@ const ReturnParcelDetailsScreen: React.FC<NativeStackScreenProps<any, any>> = ({
             </View>
           </View>
         </View>
-
       </View>
     </ScrollView>
   );
@@ -261,7 +274,6 @@ const styles = StyleSheet.create({
   infoSection: {
     width: '50%',
     height: height * 0.45,
-
   },
   headlineView: {
     borderRadius: 10,

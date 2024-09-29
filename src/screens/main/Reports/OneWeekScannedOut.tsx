@@ -14,9 +14,10 @@ import {
   import SQLite, { ResultSet, Transaction } from 'react-native-sqlite-storage';
   import { useNavigation ,useFocusEffect} from '@react-navigation/native';
   import { NativeStackNavigationProp, NativeStackScreenProps} from '@react-navigation/native-stack';
-  import { fetchParcels, fetchParcelsFromLastWeek } from '../../../../database/DeviceSync';
+  //import { fetchParcels, fetchParcelsFromLastWeek } from '../../../../database/DeviceSync';
   import { Parcel} from '../../../../Utils/types'; // Update path as needed
   import moment from 'moment';
+import { fetchParcelsFromLastWeek } from '../../../../database/DatabseOperations';
   
   
   const { height, width } = Dimensions.get('window');
@@ -36,7 +37,7 @@ import {
          
        
          setNoOfParcels(fetchedParcels.length);
-        console.log("parcel data scan out ", fetchedParcels);
+       // console.log("parcel data scan out ", fetchedParcels);
         setParcels(fetchedParcels);
         setSearchResults(fetchedParcels);
       } catch (error) {
@@ -134,7 +135,7 @@ import {
       parcel.idNumber.toLowerCase().includes(lowerCaseQuery)
     );
   
-    console.log("filtered parcels", filteredParcels);
+    //console.log("filtered parcels", filteredParcels);
     setSearchResults(filteredParcels);
   }, [barcode, parcels]);
   

@@ -9,7 +9,7 @@ import {
 } from 'react-native-vision-camera';
 import {Colors} from '../../../../constants/colours';
 
-const AutoScanInScreen = () => {
+const AutoReturnParcelScreen = () => {
   const navigation = useNavigation<any>();
   const [timer, setTimer] = useState(30);
 
@@ -42,14 +42,16 @@ const AutoScanInScreen = () => {
   }, []);
 
   const codeScanner = useCodeScanner({
-    //    codeTypes: ['qr', 'ean-13'],
+    // codeTypes: ['qr', 'ean-13'],
     codeTypes: ['code-128', 'code-39', 'code-93'],
     onCodeScanned: codes => {
       console.log(codes);
       console.log(`Scanned ${codes.length} codes!`);
       if (codes[0].value) {
         setBarcode(codes[0].value);
-        navigation.replace('AutoScainInDetails', {barcode: codes[0].value});
+        navigation.replace('AutoReturnParcelDetails', {
+          barcode: codes[0].value,
+        });
       }
     },
   });
@@ -110,4 +112,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AutoScanInScreen;
+export default AutoReturnParcelScreen;

@@ -1,7 +1,8 @@
-import {useFocusEffect, useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {Card} from '@rneui/themed';
-import React, {useCallback, useEffect, useState} from 'react';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Card } from '@rneui/themed';
+import moment from 'moment';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -11,25 +12,21 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {RFPercentage} from 'react-native-responsive-fontsize';
-import {Colors} from '../../../../constants/colours';
-//import { fetchParcels, fetchParcelsFromLastWeek } from '../../../../database/DeviceSync';
-import moment from 'moment';
-import {Parcel} from '../../../../Utils/types'; // Update path as needed
-import {fetchParcelsFromLastWeek} from '../../../../database/DatabseOperations';
+import { RFPercentage } from 'react-native-responsive-fontsize';
+import { Parcel } from '../../../../Utils/types'; // Update path as needed
+import { Colors } from '../../../../constants/colours';
+import { fetchParcels } from '../../../../database/DatabseOperations';
 
 const {height, width} = Dimensions.get('window');
 
-const ScanOutParcelReturned = () => {
+const ScanOutScreen = () => {
   const [parcels, setParcels] = useState<Parcel[]>([]);
   const [searchResults, setSearchResults] = useState<Parcel[]>([]);
   const [barcode, setBarcode] = useState<string>('');
-  const [noOfParcels, setNoOfParcels] = useState<number>(0);
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const loadParcels = async () => {
     try {
-      let fetchedParcels: Parcel[] = await fetchParcelsFromLastWeek(6);
-      setNoOfParcels(fetchedParcels.length);
+      let fetchedParcels: Parcel[] = await fetchParcels(3);
       // console.log("parcel data scan out ", fetchedParcels);
       setParcels(fetchedParcels);
       setSearchResults(fetchedParcels);
@@ -85,14 +82,19 @@ const ScanOutParcelReturned = () => {
         </View>
         <View style={[styles.basicDetails, {marginTop: height * 0.03}]}>
           <Text style={styles.infoText}>Id Number: {parcel.idNumber}</Text>
-          <Text style={styles.infoText}>Due Date: {formattedDueDate}</Text>
+          <Text style={styles.infoText}>
+            Due Date:{' '}
+            {formattedDueDate === 'Invalid date' ? '' : formattedDueDate}
+          </Text>
           <Text style={styles.infoText}>
             Consignment No.: {parcel.consignmentNo}
           </Text>
         </View>
         <View style={[styles.basicDetails, {marginTop: height * 0.03}]}>
           <Text style={styles.infoText}>Cellphone: {parcel.cellphone}</Text>
-          <Text style={styles.infoText}>Date Of Birth: {formattedDOB}</Text>
+          <Text style={styles.infoText}>
+            Date Of Birth: {formattedDOB === 'Invalid date' ? '' : formattedDOB}
+          </Text>
         </View>
         {statusText !== '' && (
           <View
@@ -111,7 +113,7 @@ const ScanOutParcelReturned = () => {
   };
 
   const handleSearch = () => {
-    const lowerCaseQuery = barcode.toLowerCase(); // Assuming you're using 'barcode' as the search input variable
+    const lowerCaseQuery = barcode.toLowerCase();
 
     const filteredParcels = parcels.filter(
       parcel =>
@@ -126,8 +128,7 @@ const ScanOutParcelReturned = () => {
   };
 
   useEffect(() => {
-    const lowerCaseQuery = barcode.toLowerCase(); // Assuming you're using 'barcode' as the search input variable
-
+    const lowerCaseQuery = barcode.toLowerCase();
     const filteredParcels = parcels.filter(
       parcel =>
         parcel.barcode.toLowerCase().includes(lowerCaseQuery) ||
@@ -137,7 +138,6 @@ const ScanOutParcelReturned = () => {
         parcel.idNumber.toLowerCase().includes(lowerCaseQuery),
     );
 
-    //console.log("filtered parcels", filteredParcels);
     setSearchResults(filteredParcels);
   }, [barcode, parcels]);
 
@@ -146,7 +146,7 @@ const ScanOutParcelReturned = () => {
   };
 
   const renderItem = ({item}: {item: Parcel}) => (
-    <TouchableOpacity disabled={true} onPress={() => handleParcelPress(item)}>
+    <TouchableOpacity onPress={() => handleParcelPress(item)}>
       <ParcelCard parcel={item} />
     </TouchableOpacity>
   );
@@ -154,25 +154,20 @@ const ScanOutParcelReturned = () => {
   return (
     <View style={styles.mainView}>
       <Card containerStyle={styles.cardView}>
-        <View>
-          <View style={styles.nameCircle}>
-            <Text style={styles.circleText}>{noOfParcels}</Text>
+        <View style={styles.inputTextContainer}>
+          <View>
+            <Text>Search by Name or Cellphone or Id Number or Barcode</Text>
           </View>
-          <View style={styles.inputTextContainer}>
-            <View>
-              <Text>Search by Name or Cellphone or Id Number or Barcode</Text>
-            </View>
 
-            <TextInput
-              style={styles.textInputView}
-              placeholder="            Enter Search Text"
-              value={barcode}
-              onChangeText={setBarcode}
-            />
-            <TouchableOpacity style={styles.buttomView} onPress={handleSearch}>
-              <Text style={styles.buttonText}>Search</Text>
-            </TouchableOpacity>
-          </View>
+          <TextInput
+            style={styles.textInputView}
+            placeholder="            Enter Search Text"
+            value={barcode}
+            onChangeText={setBarcode}
+          />
+          <TouchableOpacity style={styles.buttomView} onPress={handleSearch}>
+            <Text style={styles.buttonText}>Search</Text>
+          </TouchableOpacity>
         </View>
       </Card>
 
@@ -316,4 +311,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ScanOutParcelReturned;
+export default ScanOutScreen;

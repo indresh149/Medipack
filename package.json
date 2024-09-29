@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.24.0",
+    "@react-native-community/netinfo": "^11.4.1",
     "@react-navigation/drawer": "^6.7.2",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/native-stack": "^6.10.1",
@@ -23,6 +24,7 @@
     "react": "18.2.0",
     "react-native": "0.74.3",
     "react-native-background-actions": "^4.0.1",
+    "react-native-big-calendar": "^4.15.0",
     "react-native-circular-progress-indicator": "^4.4.2",
     "react-native-device-info": "^11.1.0",
     "react-native-gesture-handler": "^2.17.1",
@@ -33,6 +35,8 @@
     "react-native-screens": "^3.32.0",
     "react-native-sqlite-storage": "^6.0.1",
     "react-native-svg": "^15.5.0",
+    "react-native-toast-notifications": "^3.4.0",
+    "react-native-uuid": "^2.0.2",
     "react-native-vector-icons": "^10.1.0",
     "react-native-vision-camera": "^4.5.2"
   },

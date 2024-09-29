@@ -1,44 +1,51 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {NavigationProp, useNavigation} from '@react-navigation/native';
+import axios from 'axios';
 import React, {useEffect, useState} from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Image,
+  Modal,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  Image,
-  StyleSheet,
-  StatusBar,
-  Dimensions,
-  Alert,
+  View,
 } from 'react-native';
-import {useNavigation, NavigationProp} from '@react-navigation/native';
-import SQLite, {ResultSet, Transaction} from 'react-native-sqlite-storage';
-import {Colors} from '../../../constants/colours';
-import {RFPercentage} from 'react-native-responsive-fontsize';
-import axios from 'axios';
-import BASE_URL from '../../../config';
 import DeviceInfo from 'react-native-device-info';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createDeviceTable, insertDeviceData, setupDeviceDatabase } from  '../../../database/DeviceDatabase';
-import { setupDatabase, loginToDevice, getSyncData, startBackgroundTasks }  from '../../../database/DeviceSync';
-
-// const db = SQLite.openDatabase({
-//   name: 'DeviceDatabase.db',
-//   location: 'default',
-// });
+import {RFPercentage} from 'react-native-responsive-fontsize';
+import {useToast} from 'react-native-toast-notifications';
+import BASE_URL from '../../../config';
+import {Colors} from '../../../constants/colours';
+import {setupOperationsDatabase} from '../../../database/DatabseOperations';
+import {
+  createDatabase,
+  insertDeviceData,
+} from '../../../database/DeviceDatabase';
+import {
+  loginToDevice,
+  setupDatabase,
+  //getSyncData,
+  startBackgroundTasks,
+} from '../../../database/DeviceSync';
 
 const {height, width} = Dimensions.get('window');
 
 const DeviceRegistrationScreen: React.FC = () => {
+  const toast = useToast();
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     async function initializeAllDb() {
-      await setupDeviceDatabase();
+      await createDatabase();
       await setupDatabase();
-
+      await setupOperationsDatabase();
     }
     initializeAllDb();
-  }
-  , []);
+  }, []);
   const navigation = useNavigation<NavigationProp<any>>();
   const [registrationKey, setRegistrationKey] = React.useState('');
 
@@ -47,8 +54,10 @@ const DeviceRegistrationScreen: React.FC = () => {
   };
 
   const registerDevice = async (navigation: any, registrationKey: string) => {
+    setModalVisible(true);
     if (!registrationKey) {
       Alert.alert('Alert', 'Please enter registration key');
+      setModalVisible(false);
       return;
     }
     try {
@@ -57,59 +66,65 @@ const DeviceRegistrationScreen: React.FC = () => {
         macAddress = '02:00:00:00:00:00';
       }
       console.log('macAddress', macAddress);
-  
+
       const headers = {
-        'registrationKey': registrationKey,
-        'macAddress': macAddress,
+        registrationKey: registrationKey,
+        macAddress: macAddress,
       };
-  
+
       const response = await axios.post(
         `${BASE_URL}/device/registerdevice`,
         {},
-        { headers }
+        {headers},
       );
-  
+
       if (response.status === 200) {
         if (response.data.devicePassword) {
-          Alert.alert('Success', 'Device registered successfully');
-          // await AsyncStorage.setItem('DevicePassword', response.data.devicePassword);
-          // await AsyncStorage.setItem('DeviceId', response.data.id.toString());
-          // await AsyncStorage.setItem('FacilityId', response.data.facilityId.toString());
+          toast.show('Device Registered successfully', {
+            type: 'success',
+            placement: 'top',
+            duration: 5000,
+
+            animationType: 'slide-in',
+          });
+
           const deviceInfo = {
-            userId : response.data.id.toString(),
+            userId: response.data.id.toString(),
             devicePassword: response.data.devicePassword,
             deviceId: response.data.id.toString(),
             facilityId: response.data.facilityId.toString(),
           };
-          
+
           await AsyncStorage.setItem('DeviceInfo', JSON.stringify(deviceInfo));
-          
-        //  await createDeviceTable();
+
           await insertDeviceData(response.data);
           console.log('Device data inserted and registered successfully');
           await loginToDevice();
           console.log('Logged in to device line 70 successfully');
 
-        // await createTables();
-         // await setupDatabase();
           console.log('Tables created successfully');
-         // await getSyncData();
-          await startBackgroundTasks();
-          console.log('Background tasks started successfully');
+
+          await startBackgroundTasks(navigation);
+          console.log('Background tasks started successfully line 102');
+          setModalVisible(false);
           navigation.navigate('LoginScreen');
         }
       }
     } catch (error) {
-      Alert.alert('Error', 'Error registering device, error: ' + error);
+      setModalVisible(false);
+      toast.show('Error registering device ' + error, {
+        type: 'error',
+        placement: 'top',
+        duration: 5000,
+        animationType: 'slide-in',
+      });
     }
   };
-  
- 
- 
 
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#000" barStyle="light-content" />
+
       <View style={styles.overlay}>
         <View style={styles.header}>
           <Text style={styles.headerText}>Device Registration</Text>
@@ -127,13 +142,24 @@ const DeviceRegistrationScreen: React.FC = () => {
             value={registrationKey}
             onChangeText={text => setRegistrationKey(text)}
           />
-          <TouchableOpacity
-           onPress={handleRegister}
-            style={styles.button}>
+          <TouchableOpacity onPress={handleRegister} style={styles.button}>
             <Text style={styles.buttonText}>Register Device</Text>
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Modal for ActivityIndicator */}
+      <Modal
+        transparent={true}
+        animationType="fade"
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <ActivityIndicator size="large" color={Colors.green} />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -148,6 +174,9 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
+    alignContent: 'center',
+    justifyContent: 'center',
+
     backgroundColor: Colors.white,
   },
   header: {
@@ -196,6 +225,17 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontSize: RFPercentage(1.5),
     fontWeight: 'bold',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+  },
+  modalContent: {
+    width: width * 0.3,
+    height: height * 0.2,
+    padding: 20,
   },
 });
 

@@ -1,46 +1,53 @@
-import { View, Text, StyleSheet } from 'react-native'
-import React, { useCallback, useEffect, useState } from 'react'
-import { useNavigation ,useFocusEffect} from '@react-navigation/native';
-  import { NativeStackNavigationProp, NativeStackScreenProps} from '@react-navigation/native-stack';
-import { Parcel } from '../../../../Utils/types';
-import { fetchParcels, fetchParcelsFromLastWeek } from '../../../../database/DeviceSync';
-import { Colors } from '../../../../constants/colours';
-import { Card } from '@rneui/base';
-import { RFPercentage } from 'react-native-responsive-fontsize';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import React, {useCallback, useEffect, useState} from 'react';
+import {StyleSheet, Text, View} from 'react-native';
+import {Parcel} from '../../../../Utils/types';
+import {Card} from '@rneui/base';
+import {RFPercentage} from 'react-native-responsive-fontsize';
+import {Colors} from '../../../../constants/colours';
+import {
+  fetchParcels,
+  fetchParcelsFromLastWeek,
+} from '../../../../database/DatabseOperations';
 
 const OneWeekSummary = () => {
   const [parcels, setParcels] = useState<Parcel[]>([]);
   const [searchResults, setSearchResults] = useState<Parcel[]>([]);
   const [barcode, setBarcode] = useState<string>('');
   const [noOfParcels, setNoOfParcels] = useState<number>(0);
-  const navigation = useNavigation<NativeStackNavigationProp<any>>(); 
+  const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const [scaInPending, setScanInPending] = useState<number>(0);
   const [readyForScanInCount, setReadyForScanInCount] = useState<number>(0);
   const [readyForScanOutCount, setReadyForScanOutCount] = useState<number>(0);
-  const [oneWeekCollectionCount, setOneWeekCollectionCount] = useState<number>(0);
+  const [oneWeekCollectionCount, setOneWeekCollectionCount] =
+    useState<number>(0);
   const [oneWeekReturnedCount, setOneWeekReturnedCount] = useState<number>(0);
 
   const loadParcels = async () => {
     try {
-      let fetchReadyForScanInParcels : Parcel[] = await fetchParcels(2);
+      let fetchReadyForScanInParcels: Parcel[] = await fetchParcels(2);
+      // console.log("parcel data line 27", fetchReadyForScanInParcels);
       setReadyForScanInCount(fetchReadyForScanInParcels.length);
 
-      let fetchReadyForScanOutParcels : Parcel[] = await fetchParcels(3);
+      let fetchReadyForScanOutParcels: Parcel[] = await fetchParcels(3);
       setReadyForScanOutCount(fetchReadyForScanOutParcels.length);
-      let fetchedParcelsColletedbyOtp: Parcel[] = await fetchParcelsFromLastWeek(4);
-      let fetchedParcelsColletedbyId: Parcel[] = await fetchParcelsFromLastWeek(5);
-       let fetchCollectedParcels: Parcel[] = [...fetchedParcelsColletedbyOtp, ...fetchedParcelsColletedbyId];
+      let fetchedParcelsColletedbyOtp: Parcel[] =
+        await fetchParcelsFromLastWeek(4);
+      let fetchedParcelsColletedbyId: Parcel[] = await fetchParcelsFromLastWeek(
+        5,
+      );
+      let fetchCollectedParcels: Parcel[] = [
+        ...fetchedParcelsColletedbyOtp,
+        ...fetchedParcelsColletedbyId,
+      ];
       setOneWeekCollectionCount(fetchCollectedParcels.length);
       let fetchedParcelsReturned: Parcel[] = await fetchParcelsFromLastWeek(6);
       setOneWeekReturnedCount(fetchedParcelsReturned.length);
-
-       
     } catch (error) {
       console.error('Error loading parcels:', error);
     }
-
   };
-
 
   useEffect(() => {
     loadParcels();
@@ -49,37 +56,43 @@ const OneWeekSummary = () => {
   useFocusEffect(
     useCallback(() => {
       loadParcels();
-    }, [])
+    }, []),
   );
 
-  
   return (
     <View style={styles.mainView}>
       <Card containerStyle={styles.cardView}>
         <View style={styles.cardContainer}>
-        <Text style={styles.headingText}>Device Summary</Text>
-        <View style={styles.textContainer}>
-        <Text style={styles.normalText}>Ready for scan in parcels count:</Text>
-        <Text style={styles.normalTextLarge}> {readyForScanInCount}</Text>
-        </View>
-        <View style={styles.textContainer}>
-        <Text style={styles.normalText}>Ready for scan out parcels count: </Text>
-        <Text style={styles.normalTextLarge}>{readyForScanOutCount}</Text>
-        </View>
-        <View style={styles.textContainer}>
-        <Text style={styles.normalText}>Collected parcel count (Last one week): </Text>
-        <Text style={styles.normalTextLarge}>{oneWeekCollectionCount}</Text>
-        </View>
-        <View style={styles.textContainer}>
-        <Text style={styles.normalText}>Returned parcel count (Last one week): </Text>
-        <Text style={styles.normalTextLarge}>{oneWeekReturnedCount}</Text>
-         </View>
+          <Text style={styles.headingText}>Device Summary</Text>
+          <View style={styles.textContainer}>
+            <Text style={styles.normalText}>
+              Ready for scan in parcels count:
+            </Text>
+            <Text style={styles.normalTextLarge}> {readyForScanInCount}</Text>
+          </View>
+          <View style={styles.textContainer}>
+            <Text style={styles.normalText}>
+              Ready for scan out parcels count:{' '}
+            </Text>
+            <Text style={styles.normalTextLarge}>{readyForScanOutCount}</Text>
+          </View>
+          <View style={styles.textContainer}>
+            <Text style={styles.normalText}>
+              Collected parcel count (Last one week):{' '}
+            </Text>
+            <Text style={styles.normalTextLarge}>{oneWeekCollectionCount}</Text>
+          </View>
+          <View style={styles.textContainer}>
+            <Text style={styles.normalText}>
+              Returned parcel count (Last one week):{' '}
+            </Text>
+            <Text style={styles.normalTextLarge}>{oneWeekReturnedCount}</Text>
+          </View>
         </View>
       </Card>
     </View>
-  )
-}
-
+  );
+};
 
 const styles = StyleSheet.create({
   mainView: {
@@ -122,4 +135,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default OneWeekSummary
+export default OneWeekSummary;
