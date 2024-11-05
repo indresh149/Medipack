@@ -1,9 +1,9 @@
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {Card} from '@rneui/themed';
-import moment from 'moment';
+import {Card, CheckBox} from '@rneui/themed';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
+  Alert,
   Dimensions,
   FlatList,
   StyleSheet,
@@ -12,40 +12,37 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import RadioGroup, {RadioButtonProps} from 'react-native-radio-buttons-group';
 import {RFPercentage} from 'react-native-responsive-fontsize';
-import {Parcel} from '../../../Utils/types';
-import {Colors} from '../../../constants/colours';
-import {fetchParcels} from '../../../database/DatabseOperations';
+import {Colors} from '../../../../constants/colours';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import moment from 'moment';
+import RadioGroup, {RadioButtonProps} from 'react-native-radio-buttons-group';
+import {Parcel} from '../../../../Utils/types';
+import {
+  deleteAllParcelsFromSelectedTable,
+  fetchParcels,
+  insertSelectedParcelData,
+} from '../../../../database/DatabseOperations';
 
 const {height, width} = Dimensions.get('window');
 
-const SearchPatientScreen = () => {
+const ReturnParcelListScreen = () => {
   const [parcels, setParcels] = useState<Parcel[]>([]);
   const [searchResults, setSearchResults] = useState<Parcel[]>([]);
   const [barcode, setBarcode] = useState<string>('');
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const [filteredResults, setFilteredResults] = useState<Parcel[]>([]);
   const [selectedId, setSelectedId] = useState<string>('1');
+  const [selectedParcels, setSelectedParcels] = useState<Parcel[]>([]);
 
   const loadParcels = async () => {
     try {
-      let fetchedParcelsPendingScainIn: Parcel[] = await fetchParcels(2);
-      let fetchedParcelsPendingScainOut: Parcel[] = await fetchParcels(3);
-      let fetchParcelsCollectedByOtp: Parcel[] = await fetchParcels(4);
-      let fetchParcelsCollectedWithoutOtp: Parcel[] = await fetchParcels(5);
-      let fetchParcelsReturned: Parcel[] = await fetchParcels(6);
-
-      let fetchedParcels = fetchedParcelsPendingScainIn.concat(
-        fetchedParcelsPendingScainOut,
-        fetchParcelsCollectedByOtp,
-        fetchParcelsCollectedWithoutOtp,
-        fetchParcelsReturned,
-      );
-
+      setSelectedParcels([]);
+      let fetchedParcels: Parcel[] = await fetchParcels(3);
       setParcels(fetchedParcels);
       setSearchResults(fetchedParcels);
+      await deleteAllParcelsFromSelectedTable();
     } catch (error) {
       console.error('Error loading parcels:', error);
     }
@@ -65,12 +62,53 @@ const SearchPatientScreen = () => {
     parcel: Parcel;
   };
 
+  const handleSelectParcel = (item: Parcel) => {
+    const isAlreadySelected = selectedParcels.find(
+      parcel => parcel.syncId === item.syncId,
+    );
+
+    if (isAlreadySelected) {
+      // Remove if already selected
+      setSelectedParcels(
+        selectedParcels.filter(parcel => parcel.syncId !== item.syncId),
+      );
+    } else {
+      // Add to selected parcels
+      setSelectedParcels([...selectedParcels, item]);
+    }
+  };
+
+  console.log('Selected parcels:', selectedParcels);
+
+  const handleSelectedParcels = async () => {
+    if (selectedParcels.length > 0) {
+      for (const parcel of selectedParcels) {
+        await insertSelectedParcelData(parcel);
+        navigation.navigate('ReturnParcelOptionsAllScreen');
+      }
+    }
+  };
+
+  const handleSelectedAllParcels = async () => {
+    setSelectedParcels(filteredResults);
+
+    if (filteredResults.length > 0) {
+      for (const parcel of filteredResults) {
+        await insertSelectedParcelData(parcel);
+        navigation.navigate('ReturnParcelOptionsAllScreen');
+      }
+    }
+  };
+
+
+
   const ParcelCard: React.FC<ParcelCardProps> = ({parcel}) => {
-    // Format the dates as "15 Aug 2024"
+    const isChecked = selectedParcels.some(
+      parcels => parcels.syncId === parcel.syncId,
+    );
+
     const formattedDueDate = moment(parcel.dueDate).format('DD MMM YYYY');
     const formattedDOB = moment(parcel.dateOfBirth).format('DD MMM YYYY');
-
-    // Calculate the status based on the due date
     const now = moment();
     const dueDateMoment = moment(parcel.dueDate);
     let statusText = '';
@@ -85,6 +123,10 @@ const SearchPatientScreen = () => {
 
     return (
       <View style={styles.mainContainer}>
+        <CheckBox
+          checked={isChecked}
+          onPress={() => handleSelectParcel(parcel)}
+        />
         <View style={styles.nameCircle}>
           <Text style={styles.circleText}>{parcel.firstName.charAt(0)}</Text>
         </View>
@@ -133,23 +175,24 @@ const SearchPatientScreen = () => {
     let filtered = parcels;
 
     if (filter === '2') {
-      filtered = parcels.filter(parcels => parcels.parcelStatusId === 2);
+      filtered = parcels.filter(parcel => {
+        const dueDateMoment = moment(parcel.dueDate);
+        const daysDifference = now.diff(dueDateMoment, 'days');
+        return daysDifference > 2 && daysDifference <= 7;
+      });
     } else if (filter === '3') {
-      filtered = parcels.filter(parcels => parcels.parcelStatusId === 3);
-    } else if (filter === '4') {
-      filtered = parcels.filter(
-        parcels => parcels.parcelStatusId === 4 || parcels.parcelStatusId === 5,
-      );
-    } else if (filter === '5') {
-      filtered = parcels.filter(parcels => parcels.parcelStatusId === 6);
+      filtered = parcels.filter(parcel => {
+        const dueDateMoment = moment(parcel.dueDate);
+        const daysDifference = now.diff(dueDateMoment, 'days');
+        return daysDifference > 7;
+      });
     }
 
     setFilteredResults(filtered);
-
     handleSearch(barcode, filtered);
   };
 
-  const handleSearch = (query: string, data: Parcel[] = filteredResults) => {
+  const handleSearch = (query: string, data: Parcel[] = searchResults) => {
     const lowerCaseQuery = query.toLowerCase();
     const filteredParcels = data.filter(
       parcel =>
@@ -182,7 +225,8 @@ const SearchPatientScreen = () => {
   }, [barcode, parcels]);
 
   const handleParcelPress = (parcel: Parcel) => {
-    navigation.navigate('SearchPatientDetailsScreen', {parcel});
+    AsyncStorage.setItem('parcel', JSON.stringify(parcel));
+    navigation.navigate('ReturnParcelDetailsScreen');
   };
 
   const renderItem = ({item}: {item: Parcel}) => (
@@ -200,23 +244,13 @@ const SearchPatientScreen = () => {
       },
       {
         id: '2',
-        label: 'Peding Scan In',
+        label: '48 hours overdue',
         value: 'option2',
       },
       {
         id: '3',
-        label: 'Pending Scan Out',
+        label: '7 days overdue',
         value: 'option3',
-      },
-      {
-        id: '4',
-        label: 'Collected',
-        value: 'option4',
-      },
-      {
-        id: '5',
-        label: 'Returned',
-        value: 'option5',
       },
     ],
     [],
@@ -227,12 +261,15 @@ const SearchPatientScreen = () => {
       <Card containerStyle={styles.cardView}>
         <View style={styles.inputTextContainer}>
           <View style={styles.leftContainer}>
-            <Text style={styles.heading}>Search by Name, Cellphone, ID Number, or Barcode</Text>
+            <Text style={styles.barcodeHintText}>
+              Search by Barcode/Name/Patient Id/Cellphone
+            </Text>
             <TextInput
               style={styles.textInputView}
-              placeholder="                        Enter Search Text"
+              placeholderTextColor={Colors.black}
+              placeholder="                                Enter Barcode"
               value={barcode}
-              onChangeText={text => {
+              onChangeText={text => { 
                 setBarcode(text);
                 handleSearch(text);
               }}
@@ -252,6 +289,24 @@ const SearchPatientScreen = () => {
               selectedId={selectedId}
               layout="row"
             />
+            <View style={styles.rightBottom}>
+              <View>
+                <TouchableOpacity
+                  style={styles.selectedButtons}
+                  onPress={handleSelectedParcels}>
+                  <Text style={styles.radioTextColorWhite}>
+                    Return Selected
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View>
+                <TouchableOpacity
+                  style={styles.selectedButtons}
+                  onPress={handleSelectedAllParcels}>
+                  <Text style={styles.radioTextColorWhite}>Return All</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </View>
       </Card>
@@ -272,20 +327,26 @@ const styles = StyleSheet.create({
   },
   cardView: {
     height: height * 0.22,
+    
     width: '97%',
     borderRadius: 10,
     backgroundColor: Colors.white,
   },
   inputTextContainer: {
+    
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     width: '100%',
     alignContent: 'center',
   },
-  heading: {
+  radioTextColor: {
+    color: Colors.black,
+  },
+  barcodeHintText: {
     fontSize: RFPercentage(1.1),
     color: Colors.black,
+    marginVertical: 5,
   },
   textInputView: {
     width: '60%',
@@ -294,9 +355,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderBottomWidth: 1,
     margin: 10,
-    paddingLeft: 10, 
-    color: Colors.black,
+    paddingLeft: 10,
     fontSize: RFPercentage(1.1),
+    color: Colors.black,
   },
   buttonView: {
     width: '20%',
@@ -331,7 +392,6 @@ const styles = StyleSheet.create({
     alignContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
-    overflow: 'visible',
   },
   patientInfoContainer: {
     margin: 20,
@@ -374,9 +434,9 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
   },
   nameCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: width * 0.07,
+    height: height * 0.098,
+    borderRadius: Math.round(width + height) / 2,
     borderColor: Colors.green,
     borderWidth: 5,
     backgroundColor: '#e9e9e9',
@@ -386,9 +446,9 @@ const styles = StyleSheet.create({
   },
   NumberCircle: {
     marginLeft: width * 0.7,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: width * 0.07,
+    height: height * 0.098,
+    borderRadius: Math.round(width + height) / 2,
     borderColor: Colors.green,
     borderWidth: 5,
     backgroundColor: '#e9e9e9',
@@ -396,18 +456,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   NumberText: {
-    fontSize: 20,
+    fontSize: RFPercentage(1.5),
     color: '#333',
   },
   circleText: {
-    fontSize: 20,
+    fontSize: RFPercentage(1.5),
     color: '#333',
   },
   basicDetails: {
     marginLeft: width * 0.05,
   },
   infoText: {
-    fontSize: 16,
+    fontSize: RFPercentage(1.5),
     color: '#666',
     marginBottom: 5,
   },
@@ -434,6 +494,22 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
   },
+  selectedButtons: {
+    marginBottom: height * 0.06,
+    padding: 10,
+    height: height * 0.05,
+    backgroundColor: Colors.green,
+    borderRadius: 10,
+    justifyContent: 'center',
+  },
+  radioTextColorWhite: {
+    color: Colors.white,
+  },
+  rightBottom: {
+    gap: 80,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
 });
 
-export default SearchPatientScreen;
+export default ReturnParcelListScreen;

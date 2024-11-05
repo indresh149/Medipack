@@ -12,12 +12,7 @@ import {
 } from '../../../../database/DatabseOperations';
 
 const OneWeekSummary = () => {
-  const [parcels, setParcels] = useState<Parcel[]>([]);
-  const [searchResults, setSearchResults] = useState<Parcel[]>([]);
-  const [barcode, setBarcode] = useState<string>('');
-  const [noOfParcels, setNoOfParcels] = useState<number>(0);
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const [scaInPending, setScanInPending] = useState<number>(0);
   const [readyForScanInCount, setReadyForScanInCount] = useState<number>(0);
   const [readyForScanOutCount, setReadyForScanOutCount] = useState<number>(0);
   const [oneWeekCollectionCount, setOneWeekCollectionCount] =

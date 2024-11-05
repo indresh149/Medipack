@@ -12,10 +12,17 @@ import {
 } from 'react-native';
 import {RFPercentage} from 'react-native-responsive-fontsize';
 import {Colors} from '../../../../constants/colours';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const {height, width} = Dimensions.get('window');
-const ReturnParcelOptions = () => {
+const ReturnParcelOptionsAllScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+
+    const handleSelectedOptions = (returnType:any) => {
+        AsyncStorage.setItem('returnType', returnType);
+        navigation.navigate('ReturnParcelSelected');
+    }
+
   return (
     <ScrollView style={styles.mainView}>
       <View style={styles.textConatiner}>
@@ -26,22 +33,22 @@ const ReturnParcelOptions = () => {
         <View style={styles.firstView}>
             <Image
               style={styles.imageStyle}
-              source={require('../../../../assets/images/camera_icon.png')}
+              source={require('../../../../assets/images/BarcodeImg.png')}
             />
             <TouchableOpacity
               style={styles.textContainer}
-              onPress={() => navigation.navigate('AutoReturnParcelScreen')}>
+              onPress={() => handleSelectedOptions("autoCamera")}>
               <Text style={styles.buttonText}>Auto Return using Camera</Text>
             </TouchableOpacity>
           </View>
           <View>
             <Image
-             style={styles.imageStyle}
+              style={styles.imageStyle}
               source={require('../../../../assets/images/BarcodeImg.png')}
             />
             <TouchableOpacity
               style={styles.textContainer}
-              onPress={() => navigation.navigate('AutoReturnScannerScreen')}>
+              onPress={() => handleSelectedOptions("autoScanner")}>
               <Text style={styles.buttonText}>Auto Return using Scanner</Text>
             </TouchableOpacity>
           </View>
@@ -52,7 +59,7 @@ const ReturnParcelOptions = () => {
             />
             <TouchableOpacity
               style={styles.textContainer}
-              onPress={() => navigation.navigate('ReturnParcelManualTextScreen')}>
+              onPress={() => handleSelectedOptions("manual")}>
               <Text style={styles.buttonText}>Manual Return</Text>
             </TouchableOpacity>
           </View>
@@ -102,12 +109,6 @@ const styles = StyleSheet.create({
     width: width * 0.3,
     height: height * 0.2,
   },
-  imageStyleSmall: {
-    marginLeft: width * 0.02,
-    resizeMode: 'contain',
-    width: width * 0.2,
-    height: height * 0.2,
-  },
   textContainer: {
     alignSelf: 'center',
     height: height * 0.08,
@@ -123,4 +124,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ReturnParcelOptions;
+export default ReturnParcelOptionsAllScreen;

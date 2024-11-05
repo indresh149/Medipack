@@ -4,16 +4,14 @@ import {
   NativeStackScreenProps,
 } from '@react-navigation/native-stack';
 import {Card} from '@rneui/base';
-import moment from 'moment';
 import React, {useEffect, useState} from 'react';
 import {
-  Alert,
   Dimensions,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
-  ScrollView
 } from 'react-native';
 import {RFPercentage} from 'react-native-responsive-fontsize';
 import {useToast} from 'react-native-toast-notifications';
@@ -21,162 +19,125 @@ import uuid from 'react-native-uuid';
 import {Parcel, SmsData} from '../../../../Utils/types';
 import {getUserInfo} from '../../../../Utils/utils';
 import {Colors} from '../../../../constants/colours';
-import {
-  getParcelByBarcode,
-  updateParcel,
-} from '../../../../database/DatabseOperations';
+import {updateParcel} from '../../../../database/DatabseOperations';
 import {insertSmsData} from '../../../../database/DeviceDatabase';
 import {getDeviceInfo} from '../../../../database/DeviceSync';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoadingOverlay from '../../../components/LoadingOverlay';
-
 
 const {height, width} = Dimensions.get('window');
 
-const AutoScanInDetails: React.FC<NativeStackScreenProps<any, any>> = ({
+const ReturnParcelManualTextScreen: React.FC<NativeStackScreenProps<any, any>> = ({
   route,
 }) => {
-  const {barcode} = route.params as {barcode: string};
+  //const {parcel} = route?.params as {parcel: Parcel};
   const toast = useToast();
   const navigation = useNavigation<NativeStackNavigationProp<any>>(); // Add parentheses to call the function
-  const [enteredBarcode, setBarcode] = useState<string>();
-  const [parcel, setParcel] = useState<Parcel>({
-    syncId: '0',
-    parcelId: 0,
-    title: '',
-    firstName: '',
-    surname: '',
-    dispatchRef: '',
-    barcode: '',
-    dueDate: '',
-    cellphone: '',
-    idNumber: '',
-    dateOfBirth: '',
-    gender: '',
-    consignmentNo: '',
-    scanInDatetime: '',
-    passcode: '',
-    scanInByUserId: 0,
-    loggedInDatetime: '',
-    scanOutDatetime: '',
-    scanOutByUserId: 0,
-    parcelStatusId: 0,
-    deviceId: 0,
-    facilityId: 0,
-    dirtyFlag: 0,
-    parcelStatus: false,
-  });
+
+  const [barcode, setBarcode] = useState<string>('');
+
+  const proceedtoOptions = () => {
+    //  AsyncStorage.setItem('parcel', JSON.stringify(parcel));
+    navigation.navigate('ScanInOptionsScreen');
+  };
+
+  const [parcel, setParcel] = useState<Parcel | null>(null);
+  const [selectedId, setSelectedId] = useState<string>('1');
 
   useEffect(() => {
-    console.log('Barcode:', barcode);
     const fetchParcel = async () => {
-      const fetchedParcel = await getParcelByBarcode(2, barcode);
-      // console.log('Fetched parcel: line 55', fetchedParcel);
-      if (fetchedParcel.syncId == '0') {
-        Alert.alert('Parcel not found with barcode: ' + barcode);
-        navigation.replace('Drawer', {screen: 'Scan In'});
-        return;
+      const parcel = await AsyncStorage.getItem('parcel');
+    //  const selectedId = await AsyncStorage.getItem('selectedId');
+      if (parcel) {
+        setParcel(JSON.parse(parcel));
       }
-      setParcel(fetchedParcel);
+        // if (selectedId) {
+        //     setSelectedId(selectedId);
+        // }
     };
-    fetchParcel();
-  }, [barcode]);
 
-  const handleManualScanIn = async () => {
+    fetchParcel();
+  }, []);
+
+  const handleManualReturn = async () => {
     const userInfo = await getUserInfo();
-    const deviceInfo = await getDeviceInfo();
     const currentUserId = userInfo?.userId;
+    const deviceInfo = await getDeviceInfo();
+
     const deviceId = deviceInfo?.deviceId;
     const facilityId = deviceInfo?.facilityId;
-    const passcode = Math.floor(10000 + Math.random() * 90000).toString();
-
-    const UUID = uuid.v4();
-    const scanInDatetime = new Date().toISOString();
+    const UUID = uuid.v4().toString().toUpperCase();
+    const returnDatetime = new Date().toISOString();
 
     const smsData: SmsData = {
-      syncId: UUID.toString().toUpperCase(),
-      parcelId: parcel.parcelId,
-      cellphone: parcel.cellphone,
-      smsCreatedDateTime: scanInDatetime,
+      syncId: UUID.toString(),
+      parcelId: parcel?.parcelId || 1,
+      cellphone: parcel?.cellphone || '',
+      smsCreatedDateTime: returnDatetime,
       deviceId: deviceId,
       facilityId: facilityId,
-      smsTypeId: 1,
+      smsTypeId: 3,
       dirtyFlag: 1,
     };
 
     try {
       await updateParcel(
-        parcel,
+        parcel!,
         currentUserId,
-        'scanInDatetime',
-        'scanInByUserId',
-        3,
-        passcode,
+        'scanOutDatetime',
+        'scanOutByUserId',
+        6,
+        parcel!.passcode,
       );
       await insertSmsData(smsData);
-      //  updateCloudOnModifieddata();
-      // Alert.alert('Parcel scanned in successfully');
-      toast.show('Parcel scanned in successfully', {
+      //   updateCloudOnModifieddata();
+
+      // Alert.alert('Parcel returned successfully');
+      toast.show('Parcel returned successfully', {
         type: 'success',
         placement: 'top',
         duration: 5000,
-
-        animationType: 'slide-in',
       });
-      navigation.replace('Drawer', {screen: 'Scan In'});
-      console.log('Parcel scanned in successfully');
-      // Optionally, navigate back or show a success message
+      navigation.replace('Drawer', {screen: 'Return Parcels'});
+      // console.log('Parcel returned  successfully');
     } catch (error) {
-      toast.show('Error during auto scan-in', {
+      // console.error('Error during manual returned :', error);
+      toast.show('Error during manual parcel returned', {
         type: 'error',
         placement: 'top',
         duration: 5000,
-
-        animationType: 'slide-in',
       });
     }
   };
 
-  // Format the dates as "15 Aug 2024"
-  const formattedDueDate = moment(parcel.dueDate).format('DD MMM YYYY');
-  const formattedDOB = moment(parcel.dateOfBirth).format('DD MMM YYYY');
 
-  // Calculate the status based on the due date
-  const now = moment();
-  const dueDateMoment = moment(parcel.dueDate);
-  let statusText = '';
 
-  const daysDifference = now.diff(dueDateMoment, 'days');
+  console.log('Parcel line 131', parcel);
 
-  if (daysDifference > 2 && daysDifference <= 7) {
-    statusText = '48 - hours overdue';
-  } else if (daysDifference > 7) {
-    statusText = '7 days overdue';
+  if (parcel === null) {
+    return <LoadingOverlay message="Loading.." />;
   }
 
-  console.log('Parcel: line 97', parcel);
-
-  if (parcel.syncId == '0') {
-    return <LoadingOverlay message="Loading" />;
-  }
   return (
-    <ScrollView style={styles.mainView}>
-     
+    <View style={styles.mainView}>
       <Card containerStyle={styles.cardView}>
         <View style={styles.inputTextContainer}>
-          {/* <TextInput
+          <TextInput
             style={styles.textInputView}
-            placeholder="Enter Barcode"
-            value={enteredBarcode}
+            placeholderTextColor={Colors.black}
+            placeholder="                Enter Barcode"
+            value={barcode}
             onChangeText={setBarcode}
-          /> */}
+          />
           <TouchableOpacity
             style={styles.buttomView}
-            onPress={handleManualScanIn}>
-            <Text style={styles.buttonText}>Scan In</Text>
+            onPress={handleManualReturn}>
+            
+            <Text style={styles.buttonText}>Return Parcel</Text>
           </TouchableOpacity>
         </View>
       </Card>
-
+      {/* 
       <View style={styles.patientInfoContainer}>
         <View style={styles.leftContainer}>
           <Text style={styles.patientInfoText}>
@@ -218,9 +179,8 @@ const AutoScanInDetails: React.FC<NativeStackScreenProps<any, any>> = ({
             </View>
           )}
         </View>
-      </View>
-     
-    </ScrollView>
+      </View> */}
+    </View>
   );
 };
 
@@ -229,7 +189,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.white,
   },
-
   cardView: {
     margin: 20,
     width: '97%',
@@ -237,18 +196,20 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   inputTextContainer: {
-    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
   textInputView: {
     width: '20%',
-    height: height * 0.08,
+    height: height * 0.09,
     backgroundColor: Colors.white,
     borderRadius: 10,
     borderBottomWidth: 1,
     margin: 10,
     paddingLeft: 10,
+    alignContent: 'center',
+    alignItems: 'center',
+    color: Colors.black,
   },
   buttomView: {
     width: '15%',
@@ -321,4 +282,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AutoScanInDetails;
+export default ReturnParcelManualTextScreen;

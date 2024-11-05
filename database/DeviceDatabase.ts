@@ -31,6 +31,7 @@ export const createDatabase = async (): Promise<void> => {
     await createUserTable();
     await createParcelTable();
     await createSmsTable();
+    await createSelectedParcelTable();
   } catch (error) {
     console.error('Error setting up the database:', error);
   }
@@ -143,6 +144,47 @@ export const createParcelTable = async (): Promise<void> => {
   }
 };
 
+export const createSelectedParcelTable = async (): Promise<void> => {
+  try {
+    await db.transaction(async (txn: Transaction) => {
+      await txn.executeSql(
+        `CREATE TABLE IF NOT EXISTS selected_parcel_table (
+          syncId VARCHAR(50) PRIMARY KEY,
+          parcelId INTEGER,
+          title VARCHAR(10),
+          firstName VARCHAR(50),
+          surname VARCHAR(50),
+          dispatchRef VARCHAR(50),
+          barcode VARCHAR(50),
+          dueDate DATETIME,
+          cellphone VARCHAR(15),
+          idNumber VARCHAR(20),
+          dateOfBirth DATETIME,
+          gender VARCHAR(10),
+          consignmentNo VARCHAR(50),
+          scanInDatetime DATETIME,
+          passcode VARCHAR(20),
+          scanInByUserId INTEGER,
+          loggedInDatetime DATETIME,
+          scanOutDatetime DATETIME,
+          scanOutByUserId INTEGER,
+          parcelStatusId INTEGER,
+          deviceId INTEGER,
+          facilityId INTEGER,
+          dirtyFlag INTEGER
+        )`,
+        [],
+        () => {
+          //  console.log('Parcel table created successfully');
+        },
+      );
+    });
+  } catch (error) {
+    console.error('Error creating parcel table:', error);
+    throw error;
+  }
+};
+
 export const createSmsTable = async (): Promise<void> => {
   try {
     await db.transaction(async (txn: Transaction) => {
@@ -159,7 +201,7 @@ export const createSmsTable = async (): Promise<void> => {
         )`,
         [],
         () => {
-          console.log('SMS table created successfully');
+          // console.log('SMS table created successfully');
         },
       );
     });
@@ -173,7 +215,7 @@ interface SmsData {
   syncId: string;
   parcelId: number;
   cellphone: string;
-  smsCreatedDateTime: string; // Use a string or Date object depending on how you're passing the date
+  smsCreatedDateTime: string;
   deviceId: number;
   facilityId: number;
   smsTypeId: number;
@@ -285,7 +327,6 @@ export const getDeviceData = async () => {
           if (len > 0) {
             for (let i = 0; i < len; i++) {
               let row = result.rows.item(i);
-              //    console.log(`Device ${i + 1}:`, row);
             }
           } else {
             //  console.log('No devices found');

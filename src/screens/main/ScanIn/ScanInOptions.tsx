@@ -84,6 +84,12 @@ const styles = StyleSheet.create({
     width: width * 0.3,
     height: height * 0.2,
   },
+  imageStyleSmall: {
+    marginLeft: width * 0.02,
+    resizeMode: 'contain',
+    width: width * 0.2,
+    height: height * 0.2,
+  },
   textContainer: {
     alignSelf: 'center',
     height: height * 0.08,

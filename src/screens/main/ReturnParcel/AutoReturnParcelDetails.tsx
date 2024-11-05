@@ -19,7 +19,6 @@ import {useToast} from 'react-native-toast-notifications';
 import uuid from 'react-native-uuid';
 import {Parcel, SmsData} from '../../../../Utils/types';
 import {Colors} from '../../../../constants/colours';
-//import { updateParcel } from '../../../database/DeviceSync';
 import {getUserInfo} from '../../../../Utils/utils';
 import {
   getParcelByBarcode,
@@ -154,30 +153,6 @@ const AutoReturnParcelDetails: React.FC<NativeStackScreenProps<any, any>> = ({
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.inputContainer}>
-        {/* <View style={styles.radioGroup}>
-          <RadioGroup
-            radioButtons={radioButtons}
-            onPress={setSelectedId}
-            selectedId={selectedId}
-            layout="row"
-          />
-        </View>
-        {selectedId === '1' && (
-          <TextInput
-            style={styles.input}
-            placeholder="Enter ID Number / Passport"
-            value={idNumber}
-            onChangeText={setIdNumber}
-          />
-        )}
-        {selectedId === '2' && (
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Pin"
-            value={pin}
-            onChangeText={setPin}
-          />
-        )} */}
         <TouchableOpacity
           style={styles.searchButton}
           onPress={handleManualReturn}>

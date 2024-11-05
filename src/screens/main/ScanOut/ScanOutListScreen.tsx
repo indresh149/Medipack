@@ -2,7 +2,7 @@ import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {Card} from '@rneui/themed';
 import moment from 'moment';
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   Dimensions,
   FlatList,
@@ -12,38 +12,23 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import RadioGroup, {RadioButtonProps} from 'react-native-radio-buttons-group';
 import {RFPercentage} from 'react-native-responsive-fontsize';
-import {Parcel} from '../../../Utils/types';
-import {Colors} from '../../../constants/colours';
-import {fetchParcels} from '../../../database/DatabseOperations';
-
+import {Parcel} from '../../../../Utils/types'; // Update path as needed
+import {Colors} from '../../../../constants/colours';
+import {fetchParcels} from '../../../../database/DatabseOperations';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const {height, width} = Dimensions.get('window');
 
-const SearchPatientScreen = () => {
+const ScanOutListScreen = () => {
   const [parcels, setParcels] = useState<Parcel[]>([]);
   const [searchResults, setSearchResults] = useState<Parcel[]>([]);
   const [barcode, setBarcode] = useState<string>('');
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const [filteredResults, setFilteredResults] = useState<Parcel[]>([]);
-  const [selectedId, setSelectedId] = useState<string>('1');
-
   const loadParcels = async () => {
     try {
-      let fetchedParcelsPendingScainIn: Parcel[] = await fetchParcels(2);
-      let fetchedParcelsPendingScainOut: Parcel[] = await fetchParcels(3);
-      let fetchParcelsCollectedByOtp: Parcel[] = await fetchParcels(4);
-      let fetchParcelsCollectedWithoutOtp: Parcel[] = await fetchParcels(5);
-      let fetchParcelsReturned: Parcel[] = await fetchParcels(6);
-
-      let fetchedParcels = fetchedParcelsPendingScainIn.concat(
-        fetchedParcelsPendingScainOut,
-        fetchParcelsCollectedByOtp,
-        fetchParcelsCollectedWithoutOtp,
-        fetchParcelsReturned,
-      );
-
+      let fetchedParcels: Parcel[] = await fetchParcels(3);
+      // console.log("parcel data scan out ", fetchedParcels);
       setParcels(fetchedParcels);
       setSearchResults(fetchedParcels);
     } catch (error) {
@@ -53,10 +38,12 @@ const SearchPatientScreen = () => {
 
   useEffect(() => {
     loadParcels();
+    setBarcode('');
   }, [navigation]);
 
   useFocusEffect(
     useCallback(() => {
+      setBarcode('');
       loadParcels();
     }, []),
   );
@@ -128,30 +115,10 @@ const SearchPatientScreen = () => {
     );
   };
 
-  const applyFilter = (parcels: Parcel[], filter: String) => {
-    const now = moment();
-    let filtered = parcels;
+  const handleSearch = () => {
+    const lowerCaseQuery = barcode.toLowerCase();
 
-    if (filter === '2') {
-      filtered = parcels.filter(parcels => parcels.parcelStatusId === 2);
-    } else if (filter === '3') {
-      filtered = parcels.filter(parcels => parcels.parcelStatusId === 3);
-    } else if (filter === '4') {
-      filtered = parcels.filter(
-        parcels => parcels.parcelStatusId === 4 || parcels.parcelStatusId === 5,
-      );
-    } else if (filter === '5') {
-      filtered = parcels.filter(parcels => parcels.parcelStatusId === 6);
-    }
-
-    setFilteredResults(filtered);
-
-    handleSearch(barcode, filtered);
-  };
-
-  const handleSearch = (query: string, data: Parcel[] = filteredResults) => {
-    const lowerCaseQuery = query.toLowerCase();
-    const filteredParcels = data.filter(
+    const filteredParcels = parcels.filter(
       parcel =>
         parcel.barcode.toLowerCase().includes(lowerCaseQuery) ||
         parcel.firstName.toLowerCase().includes(lowerCaseQuery) ||
@@ -159,16 +126,12 @@ const SearchPatientScreen = () => {
         parcel.cellphone.toLowerCase().includes(lowerCaseQuery) ||
         parcel.idNumber.toLowerCase().includes(lowerCaseQuery),
     );
-    setFilteredResults(filteredParcels);
+
+    setSearchResults(filteredParcels);
   };
 
   useEffect(() => {
-    applyFilter(searchResults, selectedId);
-  }, [selectedId, searchResults]);
-
-  useEffect(() => {
     const lowerCaseQuery = barcode.toLowerCase();
-
     const filteredParcels = parcels.filter(
       parcel =>
         parcel.barcode.toLowerCase().includes(lowerCaseQuery) ||
@@ -182,7 +145,8 @@ const SearchPatientScreen = () => {
   }, [barcode, parcels]);
 
   const handleParcelPress = (parcel: Parcel) => {
-    navigation.navigate('SearchPatientDetailsScreen', {parcel});
+    AsyncStorage.setItem('parcel', JSON.stringify(parcel));
+    navigation.navigate('ScanOutManualScreen');
   };
 
   const renderItem = ({item}: {item: Parcel}) => (
@@ -191,73 +155,31 @@ const SearchPatientScreen = () => {
     </TouchableOpacity>
   );
 
-  const radioButtons: RadioButtonProps[] = useMemo(
-    () => [
-      {
-        id: '1',
-        label: 'All',
-        value: 'option1',
-      },
-      {
-        id: '2',
-        label: 'Peding Scan In',
-        value: 'option2',
-      },
-      {
-        id: '3',
-        label: 'Pending Scan Out',
-        value: 'option3',
-      },
-      {
-        id: '4',
-        label: 'Collected',
-        value: 'option4',
-      },
-      {
-        id: '5',
-        label: 'Returned',
-        value: 'option5',
-      },
-    ],
-    [],
-  );
-
   return (
     <View style={styles.mainView}>
       <Card containerStyle={styles.cardView}>
         <View style={styles.inputTextContainer}>
-          <View style={styles.leftContainer}>
-            <Text style={styles.heading}>Search by Name, Cellphone, ID Number, or Barcode</Text>
-            <TextInput
-              style={styles.textInputView}
-              placeholder="                        Enter Search Text"
-              value={barcode}
-              onChangeText={text => {
-                setBarcode(text);
-                handleSearch(text);
-              }}
-            />
-            <TouchableOpacity
-              style={styles.buttonView}
-              onPress={() => handleSearch(barcode)}>
-              <Text style={styles.buttonText}>Search</Text>
-            </TouchableOpacity>
+          <View style={styles.haedingContainer}>
+            <Text style={styles.heading}>
+              Search by Barcode/Name/Patient Id/Cellphone
+            </Text>
           </View>
-          <View style={styles.rightContainer}>
-            <RadioGroup
-              containerStyle={styles.radioContainer}
-              labelStyle={styles.radioLabel}
-              radioButtons={radioButtons}
-              onPress={setSelectedId}
-              selectedId={selectedId}
-              layout="row"
-            />
-          </View>
+
+          <TextInput
+            style={styles.textInputView}
+            placeholderTextColor={Colors.black}
+            placeholder="                               Enter barcode"
+            value={barcode}
+            onChangeText={setBarcode}
+          />
+          <TouchableOpacity style={styles.buttomView} onPress={handleSearch}>
+            <Text style={styles.buttonText}>Search</Text>
+          </TouchableOpacity>
         </View>
       </Card>
 
       <FlatList
-        data={filteredResults}
+        data={searchResults}
         keyExtractor={item => item.syncId.toString()}
         renderItem={renderItem}
       />
@@ -277,29 +199,31 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   inputTextContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  haedingContainer: {
+   
     width: '100%',
-    alignContent: 'center',
+    alignItems: 'center',
   },
   heading: {
     fontSize: RFPercentage(1.1),
     color: Colors.black,
   },
   textInputView: {
-    width: '60%',
+    width: '30%',
     height: height * 0.06,
     backgroundColor: Colors.white,
     borderRadius: 10,
     borderBottomWidth: 1,
     margin: 10,
-    paddingLeft: 10, 
+    paddingLeft: 10,
     color: Colors.black,
     fontSize: RFPercentage(1.1),
   },
-  buttonView: {
-    width: '20%',
+  buttomView: {
+    width: '12%',
     height: height * 0.05,
     backgroundColor: Colors.green,
     borderRadius: 10,
@@ -310,28 +234,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: Colors.white,
     fontSize: RFPercentage(1.5),
-  },
-  radioLabel: {
-    fontSize: RFPercentage(1.2),
-    color: Colors.black,
-    marginVertical: 10,
-  },
-  leftContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    width: '50%',
-    alignContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-  },
-  rightContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    width: '50%',
-    alignContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    overflow: 'visible',
   },
   patientInfoContainer: {
     margin: 20,
@@ -362,7 +264,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: height * 0.2,
   },
-
+  leftContainer: {
+    marginLeft: width * 0.05,
+  },
   mainContainer: {
     flexDirection: 'row',
     padding: 10,
@@ -423,17 +327,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
-  radioContainer: {
-    width: '100%',
-    flex: 1,
-    alignItems: 'center',
-    alignContent: 'center',
-    alignSelf: 'center',
-    overflow: 'visible',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-  },
 });
 
-export default SearchPatientScreen;
+export default ScanOutListScreen;

@@ -13,10 +13,9 @@ import {
 } from 'react-native';
 import {RFPercentage} from 'react-native-responsive-fontsize';
 import {Colors} from '../../../../constants/colours';
-//import { fetchParcels } from '../../../../database/DeviceSync';
 import moment from 'moment';
 import RadioGroup, {RadioButtonProps} from 'react-native-radio-buttons-group';
-import {Parcel} from '../../../../Utils/types'; // Update path as needed
+import {Parcel} from '../../../../Utils/types'; 
 import {fetchParcels} from '../../../../database/DatabseOperations';
 
 const {height, width} = Dimensions.get('window');
@@ -217,10 +216,10 @@ const OverdueParcel = () => {
       <Card containerStyle={styles.cardView}>
         <View style={styles.inputTextContainer}>
           <View style={styles.leftContainer}>
-            <Text>Search by Name, Cellphone, ID Number, or Barcode</Text>
+            <Text style={styles.hintText}>Search by Name, Cellphone, ID Number, or Barcode</Text>
             <TextInput
               style={styles.textInputView}
-              placeholder="Enter Search Text"
+              placeholder="                    Enter Search Text"
               value={barcode}
               onChangeText={text => {
                 setBarcode(text);
@@ -235,6 +234,8 @@ const OverdueParcel = () => {
           </View>
           <View style={styles.rightContainer}>
             <RadioGroup
+             containerStyle={styles.radioContainer}
+             labelStyle={styles.radioLabel}
               radioButtons={radioButtons}
               onPress={setSelectedId}
               selectedId={selectedId}
@@ -259,7 +260,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   cardView: {
-    margin: 20,
+    height: height * 0.22,
+    
     width: '97%',
     borderRadius: 10,
     backgroundColor: Colors.white,
@@ -272,29 +274,36 @@ const styles = StyleSheet.create({
     alignContent: 'center',
   },
   textInputView: {
-    width: '90%',
-    height: height * 0.08,
+    width: '70%',
+    height: height * 0.06,
     backgroundColor: Colors.white,
     borderRadius: 10,
     borderBottomWidth: 1,
-    margin: 10,
+    margin: width * 0.01,
     paddingLeft: 10,
+    fontSize: RFPercentage(1.1),
   },
   buttonView: {
     width: '20%',
-    height: height * 0.08,
+    height: height * 0.06,
     backgroundColor: Colors.green,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    margin: 10,
+   
+    margin: height * 0.01,
   },
   buttonText: {
     color: Colors.white,
     fontSize: RFPercentage(1.5),
   },
+  hintText:{
+    fontSize: RFPercentage(1.1),
+    color: '#333',
+   
+  },
   radioLabel: {
-    fontSize: RFPercentage(2),
+    fontSize: RFPercentage(1.2),
     color: Colors.black,
     marginVertical: 10,
   },
@@ -355,9 +364,9 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
   },
   nameCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: width * 0.07,
+    height: height * 0.098,
+    borderRadius:  Math.round(width + height) / 2,
     borderColor: Colors.green,
     borderWidth: 5,
     backgroundColor: '#e9e9e9',
@@ -367,9 +376,9 @@ const styles = StyleSheet.create({
   },
   NumberCircle: {
     marginLeft: width * 0.7,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: width * 0.07,
+    height: height * 0.098,
+    borderRadius:  Math.round(width + height) / 2,
     borderColor: Colors.green,
     borderWidth: 5,
     backgroundColor: '#e9e9e9',
@@ -377,18 +386,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   NumberText: {
-    fontSize: 20,
+    fontSize: RFPercentage(1.5),
     color: '#333',
   },
   circleText: {
-    fontSize: 20,
+    fontSize: RFPercentage(1.5),
     color: '#333',
   },
   basicDetails: {
     marginLeft: width * 0.05,
   },
   infoText: {
-    fontSize: 16,
+    fontSize: RFPercentage(1.5),
     color: '#666',
     marginBottom: 5,
   },
@@ -403,6 +412,17 @@ const styles = StyleSheet.create({
     fontSize: RFPercentage(1.1),
     fontWeight: 'bold',
     color: '#fff',
+  },
+  radioContainer: {
+    width: '100%',
+    flex: 1,
+    alignItems: 'center',
+    alignContent: 'center',
+    alignSelf: 'center',
+    overflow: 'visible',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
   },
 });
 

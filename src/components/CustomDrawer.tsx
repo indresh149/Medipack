@@ -17,6 +17,7 @@ import {
 import IconPeople from 'react-native-vector-icons/Ionicons';
 import {getUserInfo} from '../../Utils/utils';
 import {Colors} from '../../constants/colours';
+import { RFPercentage } from 'react-native-responsive-fontsize';
 
 const {height, width} = Dimensions.get('window');
 
@@ -73,7 +74,7 @@ const CustomDrawer = (props: any) => {
               color={Colors.white}
               style={[
                 styles.iconView,
-                isSmallScreen ? {marginTop: height * 0.05} : null,
+                isSmallScreen ? {marginTop: height * 0.03} : null,
               ]}
             />
             <View>
@@ -103,43 +104,41 @@ const CustomDrawer = (props: any) => {
           <DrawerItem
             label="Pending Scan In Parcel"
             onPress={() => navigation.navigate('PendingScainInParcelScreen')}
-            labelStyle={{flexWrap: 'wrap'}}
+            labelStyle={styles.middleLableStyle}
           />
           <DrawerItem
             label="Overdue Parcels"
             onPress={() => navigation.navigate('OverDueParcelReportScreen')}
+            labelStyle={styles.middleLableStyle}
           />
 
           <DrawerItem
             label="One Week Scanned Out"
             onPress={() => navigation.navigate('OneWeekScannedOutReportScreen')}
+            labelStyle={styles.middleLableStyle}
           />
           <DrawerItem
             label="One Week Returned"
             onPress={() =>
               navigation.navigate('ScanOutParcelRturnedReportScreen')
             }
+            labelStyle={styles.middleLableStyle}
           />
 
           <DrawerItem
             label="Device Summary"
             onPress={() => navigation.navigate('OneWeekSummaryReportScreen')}
+            labelStyle={styles.middleLableStyle}
           />
         </View>
-      </DrawerContentScrollView>
-      <View style={{padding: 20, borderTopWidth: 1, borderTopColor: '#1B75BB'}}>
+        <View style={{padding: 20, borderTopWidth: 1, borderTopColor: '#1B75BB'}}>
         <TouchableOpacity onPress={() => {}} style={{paddingVertical: 3}}>
           <View style={{flexDirection: 'row', alignItems: 'center'}}></View>
         </TouchableOpacity>
         <TouchableOpacity onPress={logout} style={{paddingVertical: 6}}>
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
             <Text
-              style={{
-                color: '#676A6C',
-                fontSize: 15,
-                fontFamily: 'zwodrei',
-                marginLeft: 5,
-              }}>
+              style={styles.lastSectionStyle}>
               Sign Out
             </Text>
           </View>
@@ -149,12 +148,7 @@ const CustomDrawer = (props: any) => {
           style={{paddingVertical: 6}}>
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
             <Text
-              style={{
-                color: '#676A6C',
-                fontSize: 15,
-                fontFamily: 'zwodrei',
-                marginLeft: 5,
-              }}>
+               style={styles.lastSectionStyle}>
               My Profile
             </Text>
           </View>
@@ -164,17 +158,14 @@ const CustomDrawer = (props: any) => {
           style={{paddingVertical: 6}}>
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
             <Text
-              style={{
-                color: '#676A6C',
-                fontSize: 15,
-                fontFamily: 'zwodrei',
-                marginLeft: 5,
-              }}>
+              style={styles.lastSectionStyle}>
               Administration
             </Text>
           </View>
         </TouchableOpacity>
       </View>
+      </DrawerContentScrollView>
+     
     </View>
   );
 };
@@ -190,7 +181,7 @@ const styles = StyleSheet.create({
   },
   fullName: {
     color: Colors.white,
-    fontSize: 20,
+    fontSize: RFPercentage(2.1),
     fontWeight: 'bold',
     marginLeft: width * 0.01,
     marginTop: height * 0.07,
@@ -221,10 +212,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: RFPercentage(1.2),
     fontWeight: 'bold',
     color: '#676A6C',
     marginBottom: 10,
   },
+  lastSectionStyle: {
+    color: '#676A6C',
+    fontSize: RFPercentage(1.2),
+    fontFamily: 'zwodrei',
+    marginLeft: 5,
+  },
+  middleLableStyle: {
+    fontSize: RFPercentage(1.2),
+    color: '#676A6C',
+    fontFamily: 'zwodrei',
+  },
+
 });
 export default CustomDrawer;

@@ -22,7 +22,6 @@ const openDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
       location: 'default',
     });
 
-    // console.log('Database opened successfully');
     return database;
   } catch (error) {
     console.error('Error opening database:', error);
@@ -138,8 +137,8 @@ export const fetchParcelsByStatusAndDueDate = async (
       txn.executeSql(
         `SELECT * FROM parcel_table 
          WHERE parcelStatusId = ? 
-         AND DATE(datetime(dueDate, 'localtime')) = ?`, // Convert dueDate to local time and match date part
-        [parcelStatusId, dueDate], // Pass the due date in 'YYYY-MM-DD' format
+         AND DATE(datetime(dueDate, 'localtime')) = ?`,
+        [parcelStatusId, dueDate],
         (tx, results) => {
           let parcels = [];
           for (let i = 0; i < results.rows.length; i++) {
@@ -168,7 +167,7 @@ export const fetchParcelsFromLastWeek = async (id: any): Promise<any[]> => {
 
     db.transaction(txn => {
       txn.executeSql(
-        'SELECT * FROM parcel_table WHERE parcelStatusId = ? AND dueDate BETWEEN ? AND ?',
+        'SELECT * FROM parcel_table WHERE parcelStatusId = ? AND scanOutDatetime BETWEEN ? AND ?',
         [id, lastWeek.toISOString(), today.toISOString()],
         (tx, results) => {
           let parcels = [];
@@ -209,7 +208,6 @@ export const updateParcel = async (
 ): Promise<void> => {
   const db = openDatabase();
   const scanInDatetime = new Date().toISOString();
-  // console.log('Parcel: line 729 upadte called', parcel);
 
   try {
     await (
@@ -224,9 +222,7 @@ export const updateParcel = async (
             dirtyFlag = ? 
           WHERE syncId = ?`,
         [scanInDatetime, userId, parcelStatusId, passcode, 2, parcel.syncId],
-        () => {
-          //    console.log('Parcel updated successfully after scan in or scan out or return');
-        },
+        () => {},
       );
     });
   } catch (error) {
@@ -313,64 +309,13 @@ export const getSmsDataWithDirtyFlag = async (): Promise<
         },
       );
     });
-    console.log('SMS data array: line 295', smsDataArray);
+    //console.log('SMS data array: line 295', smsDataArray);
     return smsDataArray;
   } catch (error) {
     console.error('Error retrieving SMS data:', error);
     throw error;
   }
 };
-
-// export const deleteSmsRecordsWithDirtyFlag = async (
-//   apiResponse: {
-//     syncId: string;
-//     parcelId: number;
-//     Cellphone: string | null;
-//     SmsCreatedDatetime: string;
-//     deviceId: number;
-//     facilityId: number;
-//     SmsTypeId: number;
-//     dirtyFlag: number;
-//   }[],
-// ): Promise<{ SyncId: string; Status: boolean }[]> => {
-//   const deleteStatus: { SyncId: string; Status: boolean }[] = [];
-
-//   try {
-//     // Filter the API response to get only the records with dirtyFlag = 3
-//     const recordsToDelete = apiResponse.filter((record) => record.dirtyFlag === 3);
-
-//     console.log('records to delete', recordsToDelete);
-
-//     await db.transaction(async (txn: Transaction) => {
-//       for (const record of recordsToDelete) {
-//         console.log('record to delete line 350', record);
-
-//         // Wrap executeSql in a promise to use await properly
-//         const result = await new Promise<{ rowsAffected: number }>((resolve, reject) => {
-//           txn.executeSql(
-//             `DELETE FROM sms_table WHERE syncId = ?`,
-//             [record.syncId],
-//             (tx, result) => resolve(result),
-//             (tx, error) => reject(error)
-//           );
-//         });
-
-//         // Check if the record was deleted
-//         if (result.rowsAffected > 0) {
-//           deleteStatus.push({ SyncId: record.syncId, Status: true });
-//         } else {
-//           // Record not found
-//           deleteStatus.push({ SyncId: record.syncId, Status: false });
-//         }
-//       }
-//     });
-//   } catch (error) {
-//     console.error('Error during transaction:', error);
-//     throw error;
-//   }
-
-//   return deleteStatus;
-// };
 
 export const deleteSmsRecordsWithDirtyFlag = async (
   apiResponse: {
@@ -385,7 +330,7 @@ export const deleteSmsRecordsWithDirtyFlag = async (
   }[],
 ): Promise<{SyncId: string; Status: boolean}[]> => {
   const deleteStatus: {SyncId: string; Status: boolean}[] = [];
-  // console.log('api response line 341', apiResponse);
+
   try {
     // Filter the API response to get only the records with dirtyFlag = 3
     const recordsToDelete = apiResponse.filter(
@@ -480,6 +425,153 @@ export const updateSmsRecordsDirtyFlag = async (
     });
   } catch (error) {
     console.error('Error updating dirtyFlag:', error);
+    throw error;
+  }
+};
+
+export const insertSelectedParcelData = async (parcelData: any) => {
+  try {
+    db.transaction((txn: Transaction) => {
+      txn.executeSql(
+        `INSERT INTO selected_parcel_table 
+          (syncId, 
+           parcelId, 
+           title, 
+           firstName, 
+           surname, 
+           dispatchRef, 
+           barcode, 
+           dueDate, 
+           cellphone, 
+           idNumber, 
+           dateOfBirth, 
+           gender, 
+           consignmentNo, 
+           scanInDatetime, 
+           passcode, 
+           scanInByUserId, 
+           loggedInDatetime, 
+           scanOutDatetime, 
+           scanOutByUserId, 
+           parcelStatusId, 
+           deviceId, 
+           facilityId, 
+           dirtyFlag) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          parcelData.syncId,
+          parcelData.parcelId,
+          parcelData.title,
+          parcelData.firstName,
+          parcelData.surname,
+          parcelData.dispatchRef,
+          parcelData.barcode,
+          parcelData.dueDate,
+          parcelData.cellphone,
+          parcelData.idNumber,
+          parcelData.dateOfBirth,
+          parcelData.gender,
+          parcelData.consignmentNo,
+          parcelData.scanInDatetime,
+          parcelData.passcode,
+          parcelData.scanInByUserId,
+          parcelData.loggedInDatetime,
+          parcelData.scanOutDatetime,
+          parcelData.scanOutByUserId,
+          parcelData.parcelStatusId,
+          parcelData.deviceId,
+          parcelData.facilityId,
+          parcelData.dirtyFlag,
+        ],
+        (tx, result) => {
+          console.log('Data inserted successfully:', result); // Confirm insertion
+        },
+        (tx, error) => {
+          console.error(
+            'Error inserting data into selected_parcel_table:',
+            error,
+          ); // Log errors if insertion fails
+        },
+      );
+    });
+  } catch (error) {
+    console.error('Transaction error in insertSelectedParcelData:', error);
+  }
+};
+
+export const fetchSelectedParcels = async (id: any): Promise<any[]> => {
+  return new Promise((resolve, reject) => {
+    db.transaction(txn => {
+      txn.executeSql(
+        'SELECT * FROM selected_parcel_table WHERE parcelStatusId = ?',
+        [id],
+        (tx, results) => {
+          let parcels = [];
+          for (let i = 0; i < results.rows.length; i++) {
+            parcels.push(results.rows.item(i));
+          }
+
+          // Sorting the parcels based on dueDate and firstName
+          parcels.sort((a, b) => {
+            const dateA = new Date(a.dueDate);
+            const dateB = new Date(b.dueDate);
+
+            if (dateA > dateB) return -1;
+            if (dateA < dateB) return 1;
+
+            // If due dates are the same, sort by firstName
+            return a.firstName.localeCompare(b.firstName);
+          });
+
+          resolve(parcels);
+        },
+        error => {
+          console.error('Error fetching parcels:', error);
+          reject(error);
+        },
+      );
+    });
+  });
+};
+
+export const updateParcelStatus = async (
+  syncId: string,
+  newParcelStatusId: number,
+): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    db.transaction(txn => {
+      txn.executeSql(
+        'UPDATE selected_parcel_table SET parcelStatusId = ? WHERE syncId = ?',
+        [newParcelStatusId, syncId],
+        (tx, results) => {
+          if (results.rowsAffected > 0) {
+            console.log(
+              `Parcel status updated successfully for syncId: ${syncId}`,
+            );
+            resolve();
+          } else {
+            console.warn(`No parcel found with syncId: ${syncId}`);
+            reject(`No parcel found with syncId: ${syncId}`);
+          }
+        },
+        error => {
+          console.error('Error updating parcel status:', error);
+          reject(error);
+        },
+      );
+    });
+  });
+};
+
+export const deleteAllParcelsFromSelectedTable = async (): Promise<void> => {
+  try {
+    await db.transaction(async (txn: Transaction) => {
+      await txn.executeSql(`DELETE FROM selected_parcel_table`, [], () => {
+        console.log('All parcels deleted successfully');
+      });
+    });
+  } catch (error) {
+    console.error('Error deleting all parcels from table:', error);
     throw error;
   }
 };
@@ -580,7 +672,10 @@ export const deregisterDevice = async (navigation: any): Promise<boolean> => {
       Alert.alert('Error', 'Failed to deregister device');
       return false;
     }
-  } catch (error) {
+  } catch (error: any) {
+    if (error.response.status === 401 || error.response.status === 400) {
+      loginToDevice();
+    }
     console.error('Error deregistering device:', error);
     return false;
   }

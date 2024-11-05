@@ -12,14 +12,14 @@ import {
   getSmsDataWithDirtyFlag,
   sendDataToApi,
 } from './DatabseOperations';
-import { Colors } from '../constants/colours';
+import {Colors} from '../constants/colours';
 
 // Utility function to sleep for a specified time
 const sleep = (time: number) =>
   new Promise<void>(resolve => setTimeout(resolve, time));
 
 // Enable SQLite debugging (optional, but useful for debugging)
-// SQLite.DEBUG(true);
+//SQLite.DEBUG(true);
 SQLite.enablePromise(true);
 
 // Open the database
@@ -202,13 +202,6 @@ export const getCloudData = async (navigation: any): Promise<any> => {
     //console.log('Response:', response.status);
     if (response.status === 200) {
       const {parcels, users, deregister, smSs} = response.data;
-      // console.log('response data line 192:', response.data);
-      console.log('Sms data from cloud line 193:', smSs);
-      //  console.log('deregister value line 194:', deregister);
-
-      // console.log('Parcels line 255:', parcels);
-      // console.log('Users: line 256', users);
-      // console.log('Deregister: line 257', deregister);
 
       if (deregister) {
         await AsyncStorage.removeItem('DeviceInfo');
@@ -224,14 +217,9 @@ export const getCloudData = async (navigation: any): Promise<any> => {
         return;
       }
 
-      // if (parcels.length === 0 || users.length === 0) {
-      //   return cloudStatus; // No data to process, return empty status
-      // }
-
       if (parcels.length > 0) {
         cloudStatus.parcelStatus = await insertParcels(parcels);
       }
-      // console.log('Parcel status: line 271', cloudStatus.parcelStatus);
 
       if (users.length > 0) {
         cloudStatus.userStatus = await insertUsers(users);
@@ -240,8 +228,6 @@ export const getCloudData = async (navigation: any): Promise<any> => {
       if (smSs.length > 0) {
         cloudStatus.smsStatus = await deleteSmsRecordsWithDirtyFlag(smSs);
       }
-
-      // console.log('User status: bline 273', cloudStatus.userStatus);
     }
   } catch (error: any) {
     if (error.response.status === 401) {
@@ -352,6 +338,7 @@ const insertParcels = async (parcels: any[]): Promise<ParcelStatus[]> => {
               break;
 
             case 2:
+              console.log('Parcel data line 357', parcel);
               // Update the record based on SyncId
               txn.executeSql(
                 `UPDATE parcel_table SET
@@ -366,8 +353,8 @@ const insertParcels = async (parcels: any[]): Promise<ParcelStatus[]> => {
                    idNumber=?, 
                    dateOfBirth=?, 
                    gender=?, 
-                   consignmentNo=?, s
-                   canInDatetime=?, 
+                   consignmentNo=?, 
+                   scanInDatetime=?, 
                    passcode=?, 
                    scanInByUserId=?, 
                    loggedInDatetime=?, 
@@ -376,7 +363,7 @@ const insertParcels = async (parcels: any[]): Promise<ParcelStatus[]> => {
                    parcelStatusId=?, 
                    deviceId=?, 
                    facilityId=?, 
-                   dirtyFlag=?,
+                   dirtyFlag=?
               WHERE syncId=?`,
                 [
                   parcel.parcelId,
@@ -750,13 +737,8 @@ export const updateCloudOnModifieddata = async () => {
   try {
     const dirtyParcels = await fetchDirtyParcels();
     const smSs: any = await getSmsDataWithDirtyFlag();
-    //const smSs: any = [];
-    //console.log('Dirty parcels: line 845', dirtyParcels);
-    console.log('Dirty sms: line 846', smSs);
-    console.log('dirty parcels line 847', dirtyParcels);
 
     if (dirtyParcels.length === 0 && smSs.length === 0) {
-      // console.log('No modified data to send');
       return;
     }
 

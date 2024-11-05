@@ -18,16 +18,13 @@ import {
 import RadioGroup, {RadioButtonProps} from 'react-native-radio-buttons-group';
 import {RFPercentage} from 'react-native-responsive-fontsize';
 import {useToast} from 'react-native-toast-notifications';
-import uuid from 'react-native-uuid';
 import {Parcel, SmsData} from '../../../../Utils/types';
 import {Colors} from '../../../../constants/colours';
-import {getUserInfo} from '../../../../Utils/utils';
 import {
   getParcelByBarcode,
-  updateParcel,
+  
 } from '../../../../database/DatabseOperations';
-import {insertSmsData} from '../../../../database/DeviceDatabase';
-import {getDeviceInfo} from '../../../../database/DeviceSync';
+
 
 const {height, width} = Dimensions.get('window');
 
@@ -100,132 +97,7 @@ const AutoScanOutDetails: React.FC<NativeStackScreenProps<any, any>> = ({
 
   const [selectedId, setSelectedId] = useState<string | undefined>();
 
-  const handleManualScanOut = async () => {
-    if (parcel.scanInDatetime === null) {
-      // Alert.alert('Parcel not scanned in');
-      toast.show('Parcel not scanned in', {
-        type: 'error',
-        placement: 'top',
-        duration: 5000,
-        animationType: 'slide-in',
-      });
-      return;
-    }
-
-    if (selectedId === '1' && idNumber === '') {
-      // Alert.alert('Please enter ID Number/Passport');
-      toast.show('Please enter ID Number/Passport', {
-        type: 'warning',
-        placement: 'top',
-        duration: 5000,
-        animationType: 'slide-in',
-      });
-      return;
-    }
-
-    if (selectedId === '2' && pin === '') {
-      // Alert.alert('Please enter Pin');
-      toast.show('Please enter Pin', {
-        type: 'warning',
-        placement: 'top',
-        duration: 5000,
-        animationType: 'slide-in',
-      });
-      return;
-    }
-
-    if (selectedId === '1') {
-      if (idNumber !== parcel.idNumber) {
-        // Alert.alert('ID Number/Passport does not match');
-        toast.show('ID Number/Passport does not match', {
-          type: 'error',
-          placement: 'top',
-          duration: 5000,
-          animationType: 'slide-in',
-        });
-        return;
-      }
-    } else {
-      if (pin !== parcel.passcode) {
-        // Alert.alert('Pin does not match');
-        toast.show('Pin does not match', {
-          type: 'error',
-          placement: 'top',
-          duration: 5000,
-          animationType: 'slide-in',
-        });
-        return;
-      }
-    }
-
-    const userInfo = await getUserInfo();
-    const currentUserId = userInfo?.userId;
-    const deviceInfo = await getDeviceInfo();
-
-    const deviceId = deviceInfo?.deviceId;
-    const facilityId = deviceInfo?.facilityId;
-    const UUID = uuid.v4().toString().toUpperCase();
-    const scanoutDatetime = new Date().toISOString();
-
-    const smsData: SmsData = {
-      syncId: UUID.toString(),
-      parcelId: parcel.parcelId,
-      cellphone: parcel.cellphone,
-      smsCreatedDateTime: scanoutDatetime,
-      deviceId: deviceId,
-      facilityId: facilityId,
-      smsTypeId: 2,
-      dirtyFlag: 1,
-    };
-
-    try {
-      if (selectedId == '1') {
-        await updateParcel(
-          parcel,
-          currentUserId,
-          'scanOutDatetime',
-          'scanOutByUserId',
-          5,
-          parcel.passcode,
-        );
-        await insertSmsData(smsData);
-        //  updateCloudOnModifieddata();
-      }
-
-      if (selectedId == '2') {
-        await updateParcel(
-          parcel,
-          currentUserId,
-          'scanOutDatetime',
-          'scanOutByUserId',
-          4,
-          parcel.passcode,
-        );
-        await insertSmsData(smsData);
-        //  updateCloudOnModifieddata();
-      }
-      //  Alert.alert('Parcel scanned out successfully');
-      toast.show('Parcel scanned out successfully', {
-        type: 'success',
-        placement: 'top',
-        duration: 5000,
-
-        animationType: 'slide-in',
-      });
-      navigation.replace('Drawer', {screen: 'Scan Out'});
-      //console.log('Parcel scanned out successfully');
-    } catch (error) {
-      //console.error('Error during manual scan-out:', error);
-      toast.show('Error during auto scan-out', {
-        type: 'error',
-        placement: 'top',
-        duration: 5000,
-
-        animationType: 'slide-in',
-      });
-    }
-  };
-
+  
   // Format the dates as "15 Aug 2024"
   const formattedDueDate = moment(parcel.dueDate).format('DD MMM YYYY');
   const formattedDOB = moment(parcel.dateOfBirth).format('DD MMM YYYY');
@@ -275,7 +147,8 @@ const AutoScanOutDetails: React.FC<NativeStackScreenProps<any, any>> = ({
         )}
         <TouchableOpacity
           style={styles.searchButton}
-          onPress={handleManualScanOut}>
+        //  onPress={handleManualScanOut}
+          >
           <Text style={styles.buttonText}>SCAN OUT</Text>
         </TouchableOpacity>
       </View>
