@@ -1,6 +1,6 @@
 import {useNavigation} from '@react-navigation/native';
 import React, {useEffect, useRef, useState} from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Dimensions, StyleSheet, Text, View} from 'react-native';
 import CircularProgress from 'react-native-circular-progress-indicator';
 import {
   Camera,
@@ -9,6 +9,7 @@ import {
 } from 'react-native-vision-camera';
 import {Colors} from '../../../../constants/colours';
 
+const {height, width} = Dimensions.get('window');
 const AutoScanInScreen = () => {
   const navigation = useNavigation<any>();
   const [timer, setTimer] = useState(30);
@@ -57,7 +58,7 @@ const AutoScanInScreen = () => {
   return (
     <View style={styles.mainView}>
       <View style={styles.upperContainer}>
-        <Text>BarcodeScanner</Text>
+     
         {device != null && hasPermission && (
           <Camera
             ref={camera}
@@ -73,6 +74,7 @@ const AutoScanInScreen = () => {
             }}
           />
         )}
+   
       </View>
       <View style={styles.lowerConatiner}>
         <CircularProgress
@@ -98,9 +100,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   upperContainer: {
-    marginTop: '15%',
-    height: '40%',
-    width: '30%',
+    marginTop: height * 0.3,
+    height: height * 0.3,
+    width: width * 0.4,
+    alignItems: 'center',
   },
   lowerConatiner: {
     marginTop: '10%',

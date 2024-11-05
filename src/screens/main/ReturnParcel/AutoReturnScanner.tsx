@@ -1,6 +1,6 @@
 import {useNavigation} from '@react-navigation/native';
 import React, {useEffect, useRef, useState} from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Dimensions, StyleSheet, Text, TextInput, View} from 'react-native';
 import CircularProgress from 'react-native-circular-progress-indicator';
 import {
   Camera,
@@ -17,7 +17,8 @@ import { updateParcel } from '../../../../database/DatabseOperations';
 import { insertSmsData } from '../../../../database/DeviceDatabase';
 import {useToast} from 'react-native-toast-notifications';
 
-const AutoReturnParcelScreen = () => {
+const {height, width} = Dimensions.get('window');
+const AutoReturnScannerScreen = () => {
   const navigation = useNavigation<any>();
   const [timer, setTimer] = useState(30);
   const toast = useToast();
@@ -29,7 +30,7 @@ const AutoReturnParcelScreen = () => {
 
     if (timer === 0) {
       clearInterval(countdown);
-      navigation.replace('Drawer', {screen: 'Scan In'});
+      navigation.replace("ReturnParcelDetailsScreen");
     }
 
     return () => clearInterval(countdown);
@@ -148,27 +149,28 @@ const AutoReturnParcelScreen = () => {
     },
   });
 
+  const handleBarcodeChange = (text: string) => {
+    setBarcode(text);
+
+    // If barcode length is greater than 12 and matches parcel ID, call handleManualScanOut
+    if (text.length > 12 && barcode == parcel?.barcode) {
+        
+        handleManualReturn();
+    }
+  };
+
 
 
   return (
     <View style={styles.mainView}>
       <View style={styles.upperContainer}>
-        <Text>BarcodeScanner</Text>
-        {device != null && hasPermission && (
-          <Camera
-            ref={camera}
-            style={StyleSheet.absoluteFill}
-            isActive={hasInitialized}
-            photo={true}
-            device={device}
-            pixelFormat="yuv"
-            codeScanner={codeScanner}
-            photoQualityBalance={'speed'}
-            onInitialized={() => {
-              setHasInitialized(true);
-            }}
+      <TextInput
+            style={styles.textInputView}
+            placeholderTextColor={Colors.black}
+            placeholder="                Enter Barcode"
+            value={barcode}
+            onChangeText={handleBarcodeChange}
           />
-        )}
       </View>
       <View style={styles.lowerConatiner}>
         <CircularProgress
@@ -194,9 +196,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   upperContainer: {
-    marginTop: '15%',
-    height: '40%',
-    width: '30%',
+    marginTop: height * 0.3,
+    height: height * 0.3,
+    width: width,
+    alignItems: 'center',
   },
   lowerConatiner: {
     marginTop: '10%',
@@ -204,6 +207,18 @@ const styles = StyleSheet.create({
     width: '20%',
     alignContent: 'center',
   },
+  textInputView: {
+    width: '20%',
+    height: height * 0.09,
+    backgroundColor: Colors.white,
+    borderRadius: 10,
+    borderBottomWidth: 1,
+    margin: 10,
+    paddingLeft: 10,
+    alignContent: 'center',
+    alignItems: 'center',
+    color: Colors.black,
+  },
 });
 
-export default AutoReturnParcelScreen;
+export default AutoReturnScannerScreen;

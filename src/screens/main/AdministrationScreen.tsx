@@ -97,10 +97,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     alignContent: 'center',
+    padding: height * 0.003,
   },
   headerText: {
     color: Colors.white,
-    fontSize: RFPercentage(2.2),
+    fontSize: RFPercentage(1.6),
     fontWeight: 'bold',
   },
   deregisterContainer: {
@@ -117,7 +118,7 @@ const styles = StyleSheet.create({
     height: height * 0.06,
     width: width * 0.3,
     backgroundColor: Colors.green,
-    padding: 10,
+    padding: height * 0.01,
     marginTop: height * 0.05,
     borderRadius: 4,
   },

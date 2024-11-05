@@ -5,8 +5,8 @@ import {
   ActivityIndicator,
   Dimensions,
   Image,
+  KeyboardAvoidingView,
   Modal,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -18,6 +18,7 @@ import {RFPercentage} from 'react-native-responsive-fontsize';
 import {useToast} from 'react-native-toast-notifications';
 import {Colors} from '../../../constants/colours';
 import {findUser, printAllUsers} from '../../../database/DeviceSync';
+import IconEye from 'react-native-vector-icons/FontAwesome5';
 
 const {height, width} = Dimensions.get('window');
 const LoginScreen = () => {
@@ -25,19 +26,19 @@ const LoginScreen = () => {
   const navigation = useNavigation<any>();
   const toast = useToast();
 
-  const [isChecked, setIsChecked] = useState(false);
-
-  const toggleCheckbox = () => {
-    setIsChecked(!isChecked);
-  };
-
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   const handleLogin = async () => {
     if (identifier === '' || password === '') {
-      setError('Please enter credentials');
+        toast.show('Please enter all fields', {
+          type: 'warning',
+          placement: 'top',
+          duration: 5000,
+          animationType: 'slide-in',
+        });
       return;
     }
 
@@ -46,12 +47,10 @@ const LoginScreen = () => {
     try {
       await printAllUsers();
       const userExists = await findUser(identifier, password);
-      // console.log('userExists', userExists);
+
       if (userExists) {
-        // console.log('Login successful line 57');
         await AsyncStorage.setItem('UserInfo', JSON.stringify(userExists));
 
-        // console.log('Actual login set to true');
         setModalVisible(false);
         navigation.replace('MyDrawer' as any);
         toast.show('Logged in successfully', {
@@ -61,8 +60,6 @@ const LoginScreen = () => {
 
           animationType: 'slide-in',
         });
-        // console.log('Navigated to MyDrawer');
-        // Navigate to the next screen or do whatever on successful login
       } else {
         setModalVisible(false);
         setError('Invalid credentials');
@@ -73,7 +70,6 @@ const LoginScreen = () => {
 
           animationType: 'slide-in',
         });
-        // Alert.alert('Invalid credentials');
       }
     } catch (err) {
       setModalVisible(false);
@@ -83,7 +79,8 @@ const LoginScreen = () => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <KeyboardAvoidingView contentContainerStyle={styles.container}>
+      <View style={styles.mainView}>
       <StatusBar backgroundColor="#000" barStyle="light-content" />
 
       <View style={styles.header}>
@@ -104,37 +101,35 @@ const LoginScreen = () => {
           placeholderTextColor="#555"
           keyboardType="email-address"
         />
+        <View style={styles.inputContainerPassword}>
         <TextInput
           style={styles.input}
           placeholder="Password"
           value={password}
           onChangeText={setPassword}
           placeholderTextColor="#555"
-          secureTextEntry
+          secureTextEntry={!passwordVisible}
         />
+        <TouchableOpacity
+            style={styles.eyeIcon}
+            onPress={() => setPasswordVisible(!passwordVisible)}>
+            <IconEye
+              name={passwordVisible ? 'eye' : 'eye-slash'}
+              size={24}
+              color="#555"
+            />
+          </TouchableOpacity>
+          </View>
       </View>
-      {/* <View style={styles.checkboxContainer}>
-            <TouchableOpacity onPress={toggleCheckbox} style={styles.checkbox}>
-              {isChecked && <View style={styles.checkboxTick} />}
-            </TouchableOpacity>
-            <Text style={styles.checkboxText}>Remember Me</Text>
-            <TouchableOpacity
-              onPress={() => {
-                navigation.navigate('PasswordResetScreen' as never);
-              }}>
-              <Text style={styles.requestPasswordText}>Request Password</Text>
-            </TouchableOpacity>
-          </View> */}
+
       <TouchableOpacity
         onPress={() => {
-          // navigation.navigate('DeviceRegistrationScreen' as never);
-
           handleLogin();
         }}
         style={styles.button}>
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
-      {/* Modal for ActivityIndicator */}
+
       <Modal
         transparent={true}
         animationType="fade"
@@ -146,7 +141,8 @@ const LoginScreen = () => {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -155,10 +151,13 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
-  overlay: {
-    flex: 1,
-    backgroundColor: Colors.white,
+  mainView: {
+    alignItems: 'center',
+    alignContent: 'center',
+    justifyContent: 'center',
+
   },
+
   header: {
     width: '100%',
     height: height * 0.08,
@@ -172,16 +171,12 @@ const styles = StyleSheet.create({
     fontSize: RFPercentage(2.5),
     fontWeight: 'bold',
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+ 
   logo: {
     width: '60%',
-    height: '20%',
+    height: '15%',
     marginBottom: height * 0.05,
-    marginTop: height * 0.01,
+    marginTop: height * 0.05,
   },
   inputContainer: {
     width: '50%',
@@ -248,6 +243,14 @@ const styles = StyleSheet.create({
     width: width * 0.3,
     height: height * 0.2,
     padding: 20,
+  },
+  eyeIcon: {
+    paddingHorizontal: 10,
+  },
+  inputContainerPassword: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    
   },
 });
 

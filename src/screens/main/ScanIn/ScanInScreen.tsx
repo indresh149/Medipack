@@ -143,7 +143,8 @@ const ScanInScreen = () => {
         <View style={styles.inputTextContainer}>
           <TextInput
             style={styles.textInputView}
-            placeholder="Enter Barcode"
+            placeholderTextColor={Colors.black}
+            placeholder="               Enter Barcode"
             value={barcode}
             onChangeText={setBarcode}
           />
@@ -180,12 +181,13 @@ const styles = StyleSheet.create({
   },
   textInputView: {
     width: '20%',
-    height: height * 0.08,
+    height: height * 0.09,
     backgroundColor: Colors.white,
     borderRadius: 10,
     borderBottomWidth: 1,
     margin: 10,
     paddingLeft: 10,
+    color: Colors.black,
   },
   buttomView: {
     width: '15%',

@@ -4,7 +4,7 @@ import {
   NativeStackScreenProps,
 } from '@react-navigation/native-stack';
 import moment from 'moment';
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {
   Dimensions,
   ScrollView,
@@ -17,21 +17,33 @@ import {
 import RadioGroup, {RadioButtonProps} from 'react-native-radio-buttons-group';
 import {RFPercentage} from 'react-native-responsive-fontsize';
 import {useToast} from 'react-native-toast-notifications';
-import uuid from 'react-native-uuid';
 import {Parcel, SmsData} from '../../../../Utils/types';
 import {Colors} from '../../../../constants/colours';
-import {getUserInfo} from '../../../../Utils/utils';
-import {updateParcel} from '../../../../database/DatabseOperations';
-import {insertSmsData} from '../../../../database/DeviceDatabase';
-import {getDeviceInfo} from '../../../../database/DeviceSync';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const {height, width} = Dimensions.get('window');
 
 const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
   route,
 }) => {
-  const {parcel} = route.params as {parcel: Parcel};
-  console.log('Parcel:', parcel);
+  //const {parcel} = route.params as {parcel: Parcel};
+ // console.log('Parcel:', parcel);
+
+ const [parcel, setParcel] = useState<Parcel | null>(null);
+
+ useEffect(() => {
+  setPin('');
+   const fetchParcel = async () => {
+     const parcel = await AsyncStorage.getItem('parcel');
+     if (parcel) {
+       setParcel(JSON.parse(parcel));
+     }
+   };
+
+   fetchParcel();
+ }, []);
+
+ console.log('Parcel:', parcel);
   const navigation = useNavigation<NativeStackNavigationProp<any>>(); // Add parentheses to call the function
   const [idNumber, setIdNumber] = useState('');
   const toast = useToast();
@@ -55,7 +67,19 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
 
   const [selectedId, setSelectedId] = useState<string | undefined>();
 
-  const handleManualScanOut = async () => {
+  const proceedtoOptions = () => {
+
+    if(selectedId === undefined){
+      // Alert.alert('Please select ID Type');
+      toast.show('Please enter Number/Passport or Pin', {
+        type: 'warning',
+        placement: 'top',
+        duration: 5000,
+        animationType: 'slide-in',
+      });
+      return;
+    }
+
     if (selectedId === '1' && idNumber === '') {
       // Alert.alert('Please enter ID Number/Passport');
       toast.show('Please enter ID Number/Passport', {
@@ -81,7 +105,7 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
     }
 
     if (selectedId === '1') {
-      if (idNumber !== parcel.idNumber) {
+      if (idNumber !== parcel?.idNumber) {
         // Alert.alert('ID Number/Passport does not match');
         toast.show('ID Number/Passport does not match', {
           type: 'warning',
@@ -93,7 +117,7 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
         return;
       }
     } else {
-      if (pin !== parcel.passcode) {
+      if (pin !== parcel?.passcode) {
         // Alert.alert('Pin does not match');
         toast.show('Pin does not match', {
           type: 'warning',
@@ -106,84 +130,23 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
       }
     }
 
-    const userInfo = await getUserInfo();
-    const currentUserId = userInfo?.userId;
-    const deviceInfo = await getDeviceInfo();
 
-    const deviceId = deviceInfo?.deviceId;
-    const facilityId = deviceInfo?.facilityId;
-    const UUID = uuid.v4().toString().toUpperCase();
-    const scanoutDatetime = new Date().toISOString();
-
-    const smsData: SmsData = {
-      syncId: UUID.toString(),
-      parcelId: parcel.parcelId,
-      cellphone: parcel.cellphone,
-      smsCreatedDateTime: scanoutDatetime,
-      deviceId: deviceId,
-      facilityId: facilityId,
-      smsTypeId: 2,
-      dirtyFlag: 1,
-    };
-
-    try {
-      if (selectedId == '1') {
-        await updateParcel(
-          parcel,
-          currentUserId,
-          'scanOutDatetime',
-          'scanOutByUserId',
-          5,
-          parcel.passcode,
-        );
-        await insertSmsData(smsData);
-        // updateCloudOnModifieddata();
-      }
-
-      if (selectedId == '2') {
-        await updateParcel(
-          parcel,
-          currentUserId,
-          'scanOutDatetime',
-          'scanOutByUserId',
-          4,
-          parcel.passcode,
-        );
-        await insertSmsData(smsData);
-        //  updateCloudOnModifieddata();
-      }
-      // Alert.alert('Parcel scanned out successfully');
-      toast.show('Parcel scanned out successfully', {
-        type: 'success',
-        placement: 'top',
-        duration: 5000,
-
-        animationType: 'slide-in',
-      });
-      navigation.replace('Drawer', {screen: 'Scan Out'});
-      console.log('Parcel scanned out successfully');
-    } catch (error) {
-      // console.error('Error during manual scan-out:', error);
-      toast.show('Error during manual scan-out', {
-        type: 'error',
-        placement: 'top',
-        duration: 5000,
-
-        animationType: 'slide-in',
-      });
-    }
+      AsyncStorage.setItem('parcel', JSON.stringify(parcel));
+      AsyncStorage.setItem('selectedId', selectedId? selectedId : '');
+      navigation.navigate('ScanOutOptionsScreen');
   };
 
+  
   // Format the dates as "15 Aug 2024"
-  const formattedDueDate = moment(parcel.dueDate).format('DD MMM YYYY');
-  const formattedDOB = moment(parcel.dateOfBirth).format('DD MMM YYYY');
+  const formattedDueDate = moment(parcel?.dueDate).format('DD MMM YYYY');
+  const formattedDOB = moment(parcel?.dateOfBirth).format('DD MMM YYYY');
   const fromattedScanInDate = moment(parcel?.scanInDatetime).format(
     'DD MMM YYYY, h:mm:ss a',
   );
 
   // Calculate the status based on the due date
   const now = moment();
-  const dueDateMoment = moment(parcel.dueDate);
+  const dueDateMoment = moment(parcel?.dueDate);
   let statusText = '';
 
   const daysDifference = now.diff(dueDateMoment, 'days');
@@ -199,6 +162,7 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
       <View style={styles.inputContainer}>
         <View style={styles.radioGroup}>
           <RadioGroup
+             labelStyle={styles.radioTextColor}
             radioButtons={radioButtons}
             onPress={setSelectedId}
             selectedId={selectedId}
@@ -208,6 +172,7 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
         {selectedId === '1' && (
           <TextInput
             style={styles.input}
+            placeholderTextColor={Colors.black}
             placeholder="Enter ID Number / Passport"
             value={idNumber}
             onChangeText={setIdNumber}
@@ -216,6 +181,7 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
         {selectedId === '2' && (
           <TextInput
             style={styles.input}
+            placeholderTextColor={Colors.black}
             placeholder="Enter Pin"
             value={pin}
             onChangeText={setPin}
@@ -223,8 +189,10 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
         )}
         <TouchableOpacity
           style={styles.searchButton}
-          onPress={handleManualScanOut}>
-          <Text style={styles.buttonText}>SCAN OUT</Text>
+         // onPress={handleManualScanOut}
+          onPress={proceedtoOptions}
+          >
+          <Text style={styles.buttonText}>PROCEED</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.infoContainer}>
@@ -238,7 +206,7 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
             </View>
             <View style={styles.valueView}>
               <Text style={styles.infoTextBlack}>
-                {parcel.title} {parcel.firstName} {parcel.surname}
+                {parcel?.title} {parcel?.firstName} {parcel?.surname}
               </Text>
             </View>
           </View>
@@ -247,7 +215,7 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
               <Text style={styles.infoText}>Cellphone</Text>
             </View>
             <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>{parcel.cellphone}</Text>
+              <Text style={styles.infoTextBlack}>{parcel?.cellphone}</Text>
             </View>
           </View>
           <View style={styles.oneRowView}>
@@ -265,7 +233,7 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
               <Text style={styles.infoText}>Gender</Text>
             </View>
             <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>{parcel.gender}</Text>
+              <Text style={styles.infoTextBlack}>{parcel?.gender}</Text>
             </View>
           </View>
         </View>
@@ -279,7 +247,7 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
               <Text style={styles.infoText}>Barcode</Text>
             </View>
             <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>{parcel.barcode}</Text>
+              <Text style={styles.infoTextBlack}>{parcel?.barcode}</Text>
             </View>
           </View>
           <View style={styles.oneRowView}>
@@ -287,7 +255,7 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
               <Text style={styles.infoText}>Manifest</Text>
             </View>
             <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>{parcel.dispatchRef}</Text>
+              <Text style={styles.infoTextBlack}>{parcel?.dispatchRef}</Text>
             </View>
           </View>
           <View style={styles.oneRowView}>
@@ -317,7 +285,7 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
               <Text style={styles.infoText}>Consignment No.</Text>
             </View>
             <View style={styles.valueView}>
-              <Text style={styles.infoTextBlack}>{parcel.consignmentNo}</Text>
+              <Text style={styles.infoTextBlack}>{parcel?.consignmentNo}</Text>
             </View>
           </View>
           <View style={styles.oneRowView}>
@@ -350,23 +318,28 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     width: '50%',
-    marginBottom: height * 0.05,
+    marginBottom: height * 0.03,
     alignItems: 'center',
   },
   radioGroup: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: height * 0.04,
+    marginBottom: height * 0.02,
   },
   radioText: {
     fontSize: RFPercentage(1.5),
   },
   input: {
-    height: height * 0.08,
+    height: height * 0.09,
     borderColor: Colors.white,
     borderBottomWidth: 1,
-    paddingHorizontal: 10,
-    marginBottom: height * 0.04,
+    paddingHorizontal: height * 0.04,
+    marginBottom: height * 0.02,
+    color: Colors.black,
+    marginTop: height * 0.02,
+  },
+  radioTextColor:{
+    color: Colors.black,
   },
   searchButton: {
     width: '80%',
@@ -383,6 +356,7 @@ const styles = StyleSheet.create({
     width: '100%',
     padding: 10,
     alignSelf: 'center',
+    marginBottom: height * 0.2,
   },
   infoSection: {
     width: '50%',

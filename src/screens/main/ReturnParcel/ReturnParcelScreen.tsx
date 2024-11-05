@@ -13,10 +13,9 @@ import {
 } from 'react-native';
 import {RFPercentage} from 'react-native-responsive-fontsize';
 import {Colors} from '../../../../constants/colours';
-//import { fetchParcels } from '../../../database/DeviceSync';
 import moment from 'moment';
 import RadioGroup, {RadioButtonProps} from 'react-native-radio-buttons-group';
-import {Parcel} from '../../../../Utils/types'; // Update path as needed
+import {Parcel} from '../../../../Utils/types'; 
 import {fetchParcels} from '../../../../database/DatabseOperations';
 
 const {height, width} = Dimensions.get('window');

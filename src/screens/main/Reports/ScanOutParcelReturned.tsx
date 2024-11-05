@@ -13,9 +13,8 @@ import {
 } from 'react-native';
 import {RFPercentage} from 'react-native-responsive-fontsize';
 import {Colors} from '../../../../constants/colours';
-//import { fetchParcels, fetchParcelsFromLastWeek } from '../../../../database/DeviceSync';
 import moment from 'moment';
-import {Parcel} from '../../../../Utils/types'; // Update path as needed
+import {Parcel} from '../../../../Utils/types';
 import {fetchParcelsFromLastWeek} from '../../../../database/DatabseOperations';
 
 const {height, width} = Dimensions.get('window');
@@ -154,24 +153,32 @@ const ScanOutParcelReturned = () => {
   return (
     <View style={styles.mainView}>
       <Card containerStyle={styles.cardView}>
-        <View>
-          <View style={styles.nameCircle}>
-            <Text style={styles.circleText}>{noOfParcels}</Text>
-          </View>
-          <View style={styles.inputTextContainer}>
-            <View>
-              <Text>Search by Name or Cellphone or Id Number or Barcode</Text>
+        <View style={styles.mainCont}>
+          <View style={styles.leftContan}>
+            <View style={styles.nameCircleAbove}>
+              <Text style={styles.circleTextAbove}>{noOfParcels}</Text>
             </View>
+          </View>
+          <View style={styles.rightCont}>
+            <View style={styles.inputTextContainer}>
+              <View>
+                <Text style={styles.hintText}>
+                  Search by Name or Cellphone or Id Number or Barcode
+                </Text>
+              </View>
 
-            <TextInput
-              style={styles.textInputView}
-              placeholder="            Enter Search Text"
-              value={barcode}
-              onChangeText={setBarcode}
-            />
-            <TouchableOpacity style={styles.buttomView} onPress={handleSearch}>
-              <Text style={styles.buttonText}>Search</Text>
-            </TouchableOpacity>
+              <TextInput
+                style={styles.textInputView}
+                placeholder="             Enter Search Text"
+                value={barcode}
+                onChangeText={setBarcode}
+              />
+              <TouchableOpacity
+                style={styles.buttomView}
+                onPress={handleSearch}>
+                <Text style={styles.buttonText}>Search</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Card>
@@ -191,7 +198,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   cardView: {
-    margin: 20,
+    height: height * 0.22,
+
     width: '97%',
     borderRadius: 10,
     backgroundColor: Colors.white,
@@ -200,23 +208,55 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  textInputView: {
+  mainCont: {
+    flexDirection: 'row',
+  },
+  leftContan: {
     width: '20%',
-    height: height * 0.08,
+    flexDirection: 'row',
+    marginLeft: width * 0.01,
+    marginTop: height * 0.01,
+  },
+  rightCont: {
+    width: '80%',
+    flexDirection: 'row',
+    marginLeft: width * 0.1,
+    alignItems: 'center',
+  },
+  nameCircleAbove: {
+    marginLeft: width * 0.01,
+    width: width * 0.047,
+    height: height * 0.07,
+    borderRadius: Math.round(width + height) / 2.1,
+    borderColor: Colors.green,
+    borderWidth: 5,
+    backgroundColor: '#e9e9e9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  circleTextAbove: {
+    fontSize: RFPercentage(1.1),
+    color: '#333',
+  },
+  textInputView: {
+    width: '70%',
+    height: height * 0.06,
     backgroundColor: Colors.white,
     borderRadius: 10,
     borderBottomWidth: 1,
-    margin: 10,
+    margin: width * 0.01,
     paddingLeft: 10,
+    fontSize: RFPercentage(1.1),
+    color: Colors.black,
   },
   buttomView: {
-    width: '15%',
-    height: height * 0.08,
+    width: '35%',
+    height: height * 0.05,
     backgroundColor: Colors.green,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    margin: 10,
+    margin: height * 0.01,
   },
   buttonText: {
     color: Colors.white,
@@ -265,9 +305,9 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
   },
   nameCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: width * 0.07,
+    height: height * 0.098,
+    borderRadius: Math.round(width + height) / 2,
     borderColor: Colors.green,
     borderWidth: 5,
     backgroundColor: '#e9e9e9',
@@ -277,9 +317,9 @@ const styles = StyleSheet.create({
   },
   NumberCircle: {
     marginLeft: width * 0.7,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: width * 0.07,
+    height: height * 0.098,
+    borderRadius: Math.round(width + height) / 2,
     borderColor: Colors.green,
     borderWidth: 5,
     backgroundColor: '#e9e9e9',
@@ -287,18 +327,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   NumberText: {
-    fontSize: 20,
+    fontSize: RFPercentage(1.5),
+    color: '#333',
+  },
+  hintText: {
+    fontSize: RFPercentage(1.1),
     color: '#333',
   },
   circleText: {
-    fontSize: 20,
+    fontSize: RFPercentage(1.5),
     color: '#333',
   },
   basicDetails: {
     marginLeft: width * 0.05,
   },
   infoText: {
-    fontSize: 16,
+    fontSize: RFPercentage(1.5),
     color: '#666',
     marginBottom: 5,
   },

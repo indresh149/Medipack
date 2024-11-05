@@ -1,9 +1,11 @@
 import React, {useEffect, useState} from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Dimensions, StyleSheet, Text, View} from 'react-native';
 import {Calendar} from 'react-native-big-calendar';
 import {Colors} from '../../../constants/colours';
 import {fetchParcelsByStatusAndDueDate} from '../../../database/DatabseOperations';
+import { RFPercentage } from 'react-native-responsive-fontsize';
 
+const {height, width} = Dimensions.get('window');
 const DashboardScreen = () => {
   const getDatesOfMonth = (year: number, month: number): string[] => {
     const dates = [];
@@ -95,7 +97,7 @@ const DashboardScreen = () => {
         }}
         showAdjacentMonths={true}
         showVerticalScrollIndicator={true}
-        height={600}
+        height={height * 0.8}
       />
     </>
   );
@@ -118,23 +120,26 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     alignSelf: 'center',
+    color: Colors.black,
   },
   pendingScanIn: {
     backgroundColor: Colors.yellow,
-    padding: 5,
-    borderRadius: 5,
+    padding: height * 0.002,
+    borderRadius:  RFPercentage(.2),
     borderWidth: 1,
     borderColor: Colors.blue,
-    marginBottom: 5,
+    marginBottom: height * 0.004,
   },
   pendingScanOut: {
+    padding: height * 0.002,
     backgroundColor: Colors.blue,
-    padding: 5,
-    borderRadius: 5,
+    marginBottom: height * 0.01,
+    borderRadius:  RFPercentage(.2),
     borderWidth: 1,
     borderColor: Colors.black,
   },
   textWhite: {
+    fontSize: RFPercentage(1.1),
     color: 'white',
   },
 });
