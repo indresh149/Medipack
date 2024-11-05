@@ -104,7 +104,7 @@ const deviceSyncTask = async (
         cloudStatus.userStatus.length > 0 ||
         cloudStatus.smsStatus.length > 0
       ) {
-        console.log('cloud status line 106', cloudStatus);
+        //console.log('cloud status line 106', cloudStatus);
         await updateCloudStatus(cloudStatus);
       }
 
@@ -254,7 +254,7 @@ const insertParcels = async (parcels: any[]): Promise<ParcelStatus[]> => {
               ).toISOString()
             : null;
 
-          console.log('parceldue date line 312', dueDate);
+         // console.log('parceldue date line 312', dueDate);
 
           const dateOfBirth = parcel.dateOfBirth
             ? new Date(
