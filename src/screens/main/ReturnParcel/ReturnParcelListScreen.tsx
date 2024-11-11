@@ -78,7 +78,7 @@ const ReturnParcelListScreen = () => {
     }
   };
 
-  console.log('Selected parcels:', selectedParcels);
+ 
 
   const handleSelectedParcels = async () => {
     if (selectedParcels.length > 0) {

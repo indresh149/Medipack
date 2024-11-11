@@ -22,8 +22,6 @@ const AdministrationScreen = () => {
   const version = DeviceInfo.getVersion();
   const {type, isConnected} = useNetInfo();
 
-  console.log('Connection type', type);
-  console.log('Is connected?', isConnected);
 
   const confirmDeregister = () => {
     if (!isConnected) {

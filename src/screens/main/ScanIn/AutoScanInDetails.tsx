@@ -67,10 +67,10 @@ const AutoScanInDetails: React.FC<NativeStackScreenProps<any, any>> = ({
   });
 
   useEffect(() => {
-    console.log('Barcode:', barcode);
+   
     const fetchParcel = async () => {
       const fetchedParcel = await getParcelByBarcode(2, barcode);
-      // console.log('Fetched parcel: line 55', fetchedParcel);
+     
       if (fetchedParcel.syncId == '0') {
         Alert.alert('Parcel not found with barcode: ' + barcode);
         navigation.replace('Drawer', {screen: 'Scan In'});
@@ -123,8 +123,7 @@ const AutoScanInDetails: React.FC<NativeStackScreenProps<any, any>> = ({
         animationType: 'slide-in',
       });
       navigation.replace('Drawer', {screen: 'Scan In'});
-      console.log('Parcel scanned in successfully');
-      // Optionally, navigate back or show a success message
+    
     } catch (error) {
       toast.show('Error during auto scan-in', {
         type: 'error',
@@ -153,7 +152,7 @@ const AutoScanInDetails: React.FC<NativeStackScreenProps<any, any>> = ({
     statusText = '7 days overdue';
   }
 
-  console.log('Parcel: line 97', parcel);
+
 
   if (parcel.syncId == '0') {
     return <LoadingOverlay message="Loading" />;

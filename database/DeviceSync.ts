@@ -32,7 +32,7 @@ const openDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
       location: 'default',
     });
 
-    // console.log('Database opened successfully');
+    
     return database;
   } catch (error) {
     console.error('Error opening database:', error);
@@ -97,20 +97,20 @@ const deviceSyncTask = async (
       };
 
       cloudStatus = await getCloudData(navigation);
-      // console.log("cloud status line 98", cloudStatus);
+      
 
       if (
         cloudStatus.parcelStatus.length > 0 ||
         cloudStatus.userStatus.length > 0 ||
         cloudStatus.smsStatus.length > 0
       ) {
-        //console.log('cloud status line 106', cloudStatus);
+       
         await updateCloudStatus(cloudStatus);
       }
 
       await updateCloudOnModifieddata();
 
-      // console.log('Device synced with modified data successfully');
+      
     } catch (error) {
       loginToDevice();
       // console.error('Error during device sync task:', error);
@@ -127,7 +127,7 @@ export const loginToDevice = async (): Promise<void> => {
   const deviceId = deviceInfo?.deviceId;
 
   if (!devicePassword || !deviceId) {
-    console.log('Device not registered, credentials not found');
+   
     return;
   }
 
@@ -199,7 +199,7 @@ export const getCloudData = async (navigation: any): Promise<any> => {
         },
       },
     );
-    //console.log('Response:', response.status);
+   
     if (response.status === 200) {
       const {parcels, users, deregister, smSs} = response.data;
 
@@ -254,7 +254,7 @@ const insertParcels = async (parcels: any[]): Promise<ParcelStatus[]> => {
               ).toISOString()
             : null;
 
-         // console.log('parceldue date line 312', dueDate);
+      
 
           const dateOfBirth = parcel.dateOfBirth
             ? new Date(
@@ -338,8 +338,7 @@ const insertParcels = async (parcels: any[]): Promise<ParcelStatus[]> => {
               break;
 
             case 2:
-              console.log('Parcel data line 357', parcel);
-              // Update the record based on SyncId
+         
               txn.executeSql(
                 `UPDATE parcel_table SET
                 parcelId=?,
@@ -592,10 +591,10 @@ const insertUsers = async (users: any[]): Promise<any[]> => {
 export const updateCloudStatus = async (cloudStatus: any): Promise<void> => {
   try {
     const authToken = await AsyncStorage.getItem('AuthToken');
-    // const deviceId = await AsyncStorage.getItem('DeviceId');
+   
     const deviceInfo = await getDeviceInfo();
     const deviceId = deviceInfo?.deviceId;
-    // console.log("cloud status", cloudStatus);
+
 
     if (!authToken) {
       console.error('AuthToken not found');
@@ -607,20 +606,7 @@ export const updateCloudStatus = async (cloudStatus: any): Promise<void> => {
       return;
     }
 
-    // console.log("device id line 551", deviceId);
-    // console.log("auth token line 552", authToken);
-
-    // const parcelStatuses = await getStatusesFromTable('parcel_table','parcelStatus');
-    // const userStatuses = await getStatusesFromTable('user_table','userStatus');
-
-    // console.log('Parcel statuses:', parcelStatuses);
-    // console.log('User statuses:', userStatuses);
-
-    // if (parcelStatuses.length === 0 && userStatuses.length === 0) {
-    //   console.log('No statuses to update');
-    //   return;
-    // }
-    // console.log('Cloud status line 566:', cloudStatus);
+    
     const response = await axios.post(
       `${BASE_URL}/sync/updatecloudstatus`,
       cloudStatus,
@@ -634,8 +620,7 @@ export const updateCloudStatus = async (cloudStatus: any): Promise<void> => {
     );
 
     if (response.status === 200) {
-      console.log('data line 621', response.data);
-      // console.log('Cloud status updated successfully line 572');
+     
     }
   } catch (error: any) {
     if (error.response.status === 401) {
@@ -747,9 +732,9 @@ export const updateCloudOnModifieddata = async () => {
       smSs: smSs,
     };
 
-    console.log('Formatted data:', formattedData);
+    //console.log('Formatted data:', formattedData);
     await sendDataToApi(formattedData);
-    console.log('Data sent to API successfully after scan in or scan out');
+  
   } catch (error) {
     console.error('Error in main function:', error);
   }

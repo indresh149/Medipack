@@ -39,7 +39,7 @@ const ReturnParcelDetailsScreen: React.FC<NativeStackScreenProps<any, any>> = ({
 
     fetchParcel();
   }, []);
-  console.log('Parcel:', parcel);
+
 
   const Returnparceloptions = () => {
     AsyncStorage.setItem('parcel', JSON.stringify(parcel));

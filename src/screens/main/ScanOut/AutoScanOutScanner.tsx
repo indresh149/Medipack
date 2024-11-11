@@ -124,7 +124,7 @@ const AutoScanOutScannerScreen = () => {
         animationType: 'slide-in',
       });
       navigation.replace('Drawer', {screen: 'Scan Out'});
-      //console.log('Parcel scanned out successfully');
+    
     } catch (error) {
       //console.error('Error during manual scan-out:', error);
       toast.show('Error during auto scan-out', {
@@ -147,10 +147,7 @@ const AutoScanOutScannerScreen = () => {
     }
   };
 
-console.log('parcel', parcel);
 
-
-  console.log('barcode', barcode);
 
   return (
     <View style={styles.mainView}>

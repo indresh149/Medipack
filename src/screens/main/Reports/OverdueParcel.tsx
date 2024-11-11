@@ -31,7 +31,7 @@ const OverdueParcel = () => {
   const loadParcels = async () => {
     try {
       let fetchedParcels: Parcel[] = await fetchParcels(3);
-      console.log('parcel data scan out ', fetchedParcels);
+      
       setParcels(fetchedParcels);
       setSearchResults(fetchedParcels);
     } catch (error) {
@@ -176,7 +176,7 @@ const OverdueParcel = () => {
         parcel.idNumber.toLowerCase().includes(lowerCaseQuery),
     );
 
-    //console.log("filtered parcels", filteredParcels);
+    
     setSearchResults(filteredParcels);
   }, [barcode, parcels]);
 

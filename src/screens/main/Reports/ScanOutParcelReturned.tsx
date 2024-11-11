@@ -29,7 +29,7 @@ const ScanOutParcelReturned = () => {
     try {
       let fetchedParcels: Parcel[] = await fetchParcelsFromLastWeek(6);
       setNoOfParcels(fetchedParcels.length);
-      // console.log("parcel data scan out ", fetchedParcels);
+    
       setParcels(fetchedParcels);
       setSearchResults(fetchedParcels);
     } catch (error) {
@@ -136,7 +136,7 @@ const ScanOutParcelReturned = () => {
         parcel.idNumber.toLowerCase().includes(lowerCaseQuery),
     );
 
-    //console.log("filtered parcels", filteredParcels);
+   
     setSearchResults(filteredParcels);
   }, [barcode, parcels]);
 

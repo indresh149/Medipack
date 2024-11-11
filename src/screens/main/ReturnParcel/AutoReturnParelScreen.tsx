@@ -99,9 +99,7 @@ const AutoReturnParcelScreen = () => {
         parcel!.passcode,
       );
       await insertSmsData(smsData);
-      // updateCloudOnModifieddata();
-
-      //Alert.alert('Parcel returned successfully');
+     
       toast.show('Parcel returned successfully', {
         type: 'success',
         placement: 'top',
@@ -109,7 +107,7 @@ const AutoReturnParcelScreen = () => {
         animationType: 'slide-in',
       });
       navigation.replace('Drawer', {screen: 'Return Parcels'});
-      //console.log('Parcel returned  successfully');
+     
     } catch (error) {
       // console.error('Error during manual returned :', error);
       toast.show('Error during manual returned', {
@@ -120,14 +118,13 @@ const AutoReturnParcelScreen = () => {
       });
     }
   };
- console.log(parcel);
+
  
   const codeScanner = useCodeScanner({
     // codeTypes: ['qr', 'ean-13'],
     codeTypes: ['code-128', 'code-39', 'code-93'],
     onCodeScanned:async codes => {
-      console.log(codes);
-      console.log(`Scanned ${codes.length} codes!`);
+    
       if (codes[0].value) {
         setBarcode(codes[0].value);
         if(parcel?.barcode != codes[0].value){

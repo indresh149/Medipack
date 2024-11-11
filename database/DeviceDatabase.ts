@@ -247,7 +247,7 @@ export const insertSmsData = async (smsData: SmsData): Promise<void> => {
           smsData.dirtyFlag,
         ],
         () => {
-          console.log('SMS data inserted successfully');
+        //  console.log('SMS data inserted successfully');
         },
       );
     });

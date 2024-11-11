@@ -309,7 +309,7 @@ export const getSmsDataWithDirtyFlag = async (): Promise<
         },
       );
     });
-    //console.log('SMS data array: line 295', smsDataArray);
+   
     return smsDataArray;
   } catch (error) {
     console.error('Error retrieving SMS data:', error);
@@ -337,11 +337,11 @@ export const deleteSmsRecordsWithDirtyFlag = async (
       record => record.dirtyFlag === 3,
     );
 
-    console.log('records to delete line 348', recordsToDelete);
+  
 
     await db.transaction((txn: Transaction) => {
       for (const record of recordsToDelete) {
-        console.log('record to delete line 352', record);
+      
         txn.executeSql(
           `DELETE FROM sms_table WHERE syncId = ?`,
           [record.syncId],
@@ -353,7 +353,7 @@ export const deleteSmsRecordsWithDirtyFlag = async (
               // Record not found
               deleteStatus.push({SyncId: record.syncId, Status: true});
             }
-            console.log('delted status line 361', deleteStatus);
+        
           },
           (tx, error) => {
             console.error(
@@ -484,7 +484,7 @@ export const insertSelectedParcelData = async (parcelData: any) => {
           parcelData.dirtyFlag,
         ],
         (tx, result) => {
-          console.log('Data inserted successfully:', result); // Confirm insertion
+         // console.log('Data inserted successfully:', result); // Confirm insertion
         },
         (tx, error) => {
           console.error(
@@ -545,9 +545,9 @@ export const updateParcelStatus = async (
         [newParcelStatusId, syncId],
         (tx, results) => {
           if (results.rowsAffected > 0) {
-            console.log(
-              `Parcel status updated successfully for syncId: ${syncId}`,
-            );
+            // console.log(
+            //   `Parcel status updated successfully for syncId: ${syncId}`,
+            // );
             resolve();
           } else {
             console.warn(`No parcel found with syncId: ${syncId}`);
@@ -567,7 +567,7 @@ export const deleteAllParcelsFromSelectedTable = async (): Promise<void> => {
   try {
     await db.transaction(async (txn: Transaction) => {
       await txn.executeSql(`DELETE FROM selected_parcel_table`, [], () => {
-        console.log('All parcels deleted successfully');
+       // console.log('All parcels deleted successfully');
       });
     });
   } catch (error) {
@@ -581,7 +581,7 @@ export const sendDataToApi = async (data: any) => {
   const authToken = await AsyncStorage.getItem('AuthToken');
   const deviceId = deviceInfo?.deviceId;
 
-  console.log('Data to send line 366:', data);
+
 
   try {
     const response = await axios.post(
@@ -596,10 +596,9 @@ export const sendDataToApi = async (data: any) => {
       },
     );
 
-    console.log('Response data status 379:', response.status);
-
+ 
     const {parcelStatus, smsStatus} = response.data;
-    console.log('updated response data', response.data);
+    
     if (parcelStatus && parcelStatus.length > 0) {
       await updateDirtyFlag(parcelStatus);
     }
@@ -693,7 +692,7 @@ export const deleteDatabase = async (): Promise<void> => {
     await new Promise<void>((resolve, reject) => {
       db.close(
         () => {
-          console.log('Database closed successfully');
+         // console.log('Database closed successfully');
           resolve();
         },
         error => {
@@ -711,7 +710,7 @@ export const deleteDatabase = async (): Promise<void> => {
           location: 'default',
         },
         () => {
-          console.log('Database deleted successfully');
+       //   console.log('Database deleted successfully');
           resolve();
         },
         error => {

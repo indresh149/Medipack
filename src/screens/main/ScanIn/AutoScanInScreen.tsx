@@ -46,8 +46,7 @@ const AutoScanInScreen = () => {
     //    codeTypes: ['qr', 'ean-13'],
     codeTypes: ['code-128', 'code-39', 'code-93'],
     onCodeScanned: codes => {
-      console.log(codes);
-      console.log(`Scanned ${codes.length} codes!`);
+  
       if (codes[0].value) {
         setBarcode(codes[0].value);
         navigation.replace('AutoScainInDetails', {barcode: codes[0].value});

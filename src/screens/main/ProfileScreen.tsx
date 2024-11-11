@@ -11,7 +11,7 @@ const ProfileScreen = () => {
   useEffect(() => {
     async function fetchEmail() {
       const userInfo = await getUserInfo();
-      console.log('user info:', userInfo);
+    
       if (userInfo) {
         setUserDetails(userInfo);
       }

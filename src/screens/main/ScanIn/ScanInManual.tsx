@@ -76,8 +76,7 @@ const ScanInManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
         animationType: 'slide-in',
       });
       navigation.replace('Drawer', {screen: 'Scan In'});
-      //  console.log('Parcel scanned in successfully');
-      // Optionally, navigate back or show a success message
+     
     } catch (error) {
       // console.error('Error during manual scan-in:', error);
       toast.show('Error during manual scan-in', {

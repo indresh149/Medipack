@@ -96,7 +96,7 @@ const DeviceRegistrationScreen: React.FC = () => {
       if (!macAddress) {
         macAddress = '02:00:00:00:00:00';
       }
-      console.log('macAddress', macAddress);
+   
 
       const headers = {
         registrationKey: registrationKey,
@@ -129,14 +129,12 @@ const DeviceRegistrationScreen: React.FC = () => {
           await AsyncStorage.setItem('DeviceInfo', JSON.stringify(deviceInfo));
 
           await insertDeviceData(response.data);
-         // console.log('Device data inserted and registered successfully');
+       
           await loginToDevice();
-          //console.log('Logged in to device line 70 successfully');
-
-          //console.log('Tables created successfully');
+        
 
           await startBackgroundTasks(navigation);
-        //  console.log('Background tasks started successfully line 102');
+       
           setModalVisible(false);
           navigation.replace('LoginScreen');
         }

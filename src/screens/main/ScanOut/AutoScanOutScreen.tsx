@@ -138,9 +138,9 @@ const AutoScanOutScreen = () => {
         animationType: 'slide-in',
       });
       navigation.replace('Drawer', {screen: 'Scan Out'});
-      //console.log('Parcel scanned out successfully');
+     
     } catch (error) {
-      //console.error('Error during manual scan-out:', error);
+     
       toast.show('Error during auto scan-out', {
         type: 'error',
         placement: 'top',
@@ -156,9 +156,7 @@ const AutoScanOutScreen = () => {
     //   codeTypes: ['qr', 'ean-13'],
     codeTypes: ['code-128', 'code-39', 'code-93'],
     onCodeScanned:async codes => {
-      console.log(codes);
-      console.log(`Scanned ${codes.length} codes!`);
-      console.log(`scanned data ${codes[0].value}`);
+     
       if (codes[0].value) {
         setBarcode(codes[0].value);
         if(parcel?.barcode != codes[0].value){
@@ -181,7 +179,7 @@ const AutoScanOutScreen = () => {
     },
   });
 
-  console.log('barcode', barcode);
+
 
   return (
     <View style={styles.mainView}>
