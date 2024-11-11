@@ -37,7 +37,7 @@ const OneWeekScannedOut = () => {
       ];
 
       setNoOfParcels(fetchedParcels.length);
-      // console.log("parcel data scan out ", fetchedParcels);
+     
       setParcels(fetchedParcels);
       setSearchResults(fetchedParcels);
     } catch (error) {
@@ -144,7 +144,7 @@ const OneWeekScannedOut = () => {
         parcel.idNumber.toLowerCase().includes(lowerCaseQuery),
     );
 
-    //console.log("filtered parcels", filteredParcels);
+    
     setSearchResults(filteredParcels);
   }, [barcode, parcels]);
 

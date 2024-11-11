@@ -65,10 +65,10 @@ const AutoScanOutDetails: React.FC<NativeStackScreenProps<any, any>> = ({
   });
 
   useEffect(() => {
-    console.log('Barcode:', barcode);
+   
     const fetchParcel = async () => {
       const fetchedParcel = await getParcelByBarcode(3, barcode);
-      console.log('Fetched parcel: line 55', fetchedParcel);
+    
       if (fetchedParcel.syncId == '0') {
         Alert.alert('Parcel not found with barcode: ' + barcode);
         navigation.replace('Drawer', {screen: 'Scan Out'});

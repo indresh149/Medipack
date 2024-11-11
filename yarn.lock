@@ -3260,9 +3260,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"Medipack@workspace:.":
+"Smart PuP@workspace:.":
   version: 0.0.0-use.local
-  resolution: "Medipack@workspace:."
+  resolution: "Smart PuP@workspace:."
   dependencies:
     "@babel/core": ^7.20.0
     "@babel/preset-env": ^7.20.0

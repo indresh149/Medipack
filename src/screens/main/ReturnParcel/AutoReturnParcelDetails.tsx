@@ -64,10 +64,10 @@ const AutoReturnParcelDetails: React.FC<NativeStackScreenProps<any, any>> = ({
   });
 
   useEffect(() => {
-    console.log('Barcode:', barcode);
+  
     const fetchParcel = async () => {
       const fetchedParcel = await getParcelByBarcode(3, barcode);
-      console.log('Fetched parcel: line 55', fetchedParcel);
+
       if (fetchedParcel.syncId == '0') {
         Alert.alert('Parcel not found with barcode: ' + barcode);
         navigation.replace('Drawer', {screen: 'Return Parcels'});
@@ -118,7 +118,7 @@ const AutoReturnParcelDetails: React.FC<NativeStackScreenProps<any, any>> = ({
         animationType: 'slide-in',
       });
       navigation.replace('Drawer', {screen: 'Return Parcels'});
-      //console.log('Parcel returned  successfully');
+      
     } catch (error) {
       // console.error('Error during manual returned :', error);
       toast.show('Error during manual returned', {

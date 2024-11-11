@@ -126,7 +126,7 @@ const ScanOutManualTextScreen: React.FC<NativeStackScreenProps<any, any>> = ({
         animationType: 'slide-in',
       });
       navigation.replace('Drawer', {screen: 'Scan Out'});
-      console.log('Parcel scanned out successfully');
+    
     } catch (error) {
       // console.error('Error during manual scan-out:', error);
       toast.show('Error during manual scan-out', {
@@ -139,24 +139,7 @@ const ScanOutManualTextScreen: React.FC<NativeStackScreenProps<any, any>> = ({
     }
   };
 
-  // Format the dates as "15 Aug 2024"
-  // const formattedDueDate = moment(parcel!.dueDate).format('DD MMM YYYY');
-  //const formattedDOB = moment(parcel!.dateOfBirth).format('DD MMM YYYY');
 
-  // Calculate the status based on the due date
-  //   const now = moment();
-  //   const dueDateMoment = moment(parcel!.dueDate);
-  //   let statusText = '';
-
-  //   const daysDifference = now.diff(dueDateMoment, 'days');
-
-  //   if (daysDifference > 2 && daysDifference <= 7) {
-  //     statusText = '48 - hours overdue';
-  //   } else if (daysDifference > 7) {
-  //     statusText = '7 days overdue';
-  //   }
-
-  console.log('Parcel line 131', parcel);
 
   if (parcel === null) {
     return <LoadingOverlay message="Loading.." />;

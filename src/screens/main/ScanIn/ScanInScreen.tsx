@@ -27,7 +27,7 @@ const ScanInScreen = () => {
   const loadParcels = async () => {
     try {
       let fetchedParcels: Parcel[] = await fetchParcels(2);
-      // console.log("parcel data", fetchedParcels);
+
       setParcels(fetchedParcels);
       setSearchResults(fetchedParcels);
     } catch (error) {
@@ -123,7 +123,7 @@ const ScanInScreen = () => {
     const filteredParcels = parcels.filter(parcel =>
       parcel.barcode.toLowerCase().includes(barcode.toLowerCase()),
     );
-    // console.log("filtered parcels", filteredParcels);
+   
     setSearchResults(filteredParcels);
   }, [barcode, parcels]);
 

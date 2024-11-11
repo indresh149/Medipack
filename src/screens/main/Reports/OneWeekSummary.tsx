@@ -22,7 +22,7 @@ const OneWeekSummary = () => {
   const loadParcels = async () => {
     try {
       let fetchReadyForScanInParcels: Parcel[] = await fetchParcels(2);
-      // console.log("parcel data line 27", fetchReadyForScanInParcels);
+     
       setReadyForScanInCount(fetchReadyForScanInParcels.length);
 
       let fetchReadyForScanOutParcels: Parcel[] = await fetchParcels(3);

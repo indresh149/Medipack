@@ -22,7 +22,7 @@ const SearchPatientDetailsScreen: React.FC<
   NativeStackScreenProps<any, any>
 > = ({route}) => {
   const {parcel} = route.params as {parcel: Parcel};
-  console.log('Parcel:', parcel);
+ 
   const toast = useToast();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
 
@@ -66,7 +66,7 @@ const SearchPatientDetailsScreen: React.FC<
         duration: 5000,
       });
       navigation.replace('Drawer', {screen: 'Return Parcels'});
-      // console.log('Parcel returned  successfully');
+     
     } catch (error) {
       // console.error('Error during manual returned :', error);
       toast.show('Error during manual parcel returned', {

@@ -52,8 +52,7 @@ const ReturnParcelSelected = () => {
     // codeTypes: ['qr', 'ean-13'],
     codeTypes: ['code-128', 'code-39', 'code-93'],
     onCodeScanned: async codes => {
-      // console.log(codes);
-      // console.log(`Scanned ${codes.length} codes!`);
+      
       if (codes[0].value) {
        
 
@@ -75,25 +74,25 @@ const ReturnParcelSelected = () => {
     },
   });
 
-  console.log('Parcels list in ReturnParcelSelected', parcels);
+
 
   const loadParcels = async () => {
     try {
       let fetchedParcels: Parcel[] = await fetchSelectedParcels(3);
       let fetchReturnedParcels = await fetchSelectedParcels(6);
       const returnTypeAsync = await AsyncStorage.getItem('returnType');
-      console.log('Fetched parcels:', fetchedParcels);
+     
       const bothParcels = fetchedParcels.concat(fetchReturnedParcels);
 
       //if all the parcels having parcel status id 6 then set a state as all returned true
       const allReturned = fetchedParcels.every(
         parcel => parcel.parcelStatusId === 6,
       );
-      console.log('All returned:', allReturned);
+    
       setIsAllReturned(allReturned);
       setParcels(bothParcels);
       setReturnType(returnTypeAsync);
-      //  setSearchResults(fetchedParcels);
+      
     } catch (error) {
       console.error('Error loading parcels:', error);
     }
@@ -164,14 +163,14 @@ const ReturnParcelSelected = () => {
     </View>
   );
 
-  console.log(returnType);
+
 
   const toast = useToast();
 
   const handleBarcodeChange = (text: string) => {
     setBarcode(text);
 
-    console.log('Barcode: chnage ', text);
+
 
     // If barcode length is greater than 12 and matches parcel ID, call handleManualScanOut
     if (text.length > 11 && parcels.some(parcel => parcel.barcode == text)) {
@@ -240,16 +239,7 @@ const ReturnParcelSelected = () => {
         matchedParcel!.passcode,
       );
       await insertSmsData(smsData);
-      //   updateCloudOnModifieddata();
-
-      // Alert.alert('Parcel returned successfully');
-      // toast.show('Parcel returned successfully', {
-      //   type: 'success',
-      //   placement: 'top',
-      //   duration: 5000,
-      // });
-      // navigation.replace('Drawer', {screen: 'Return Parcels'});
-      // console.log('Parcel returned  successfully');
+      
       AsyncStorage.removeItem('selectedParcels');
       await updateParcelStatus(matchedParcel.syncId, 6);
       setBarcode('');

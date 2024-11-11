@@ -188,7 +188,7 @@ function Root() {
       try {
         const deviceInfo = await getDeviceInfo();
         const devicePassword = deviceInfo?.devicePassword;
-        //  console.log('deviceInfo 117', deviceInfo?.devicePassword);
+       
         const authToken = await AsyncStorage.getItem('AuthToken');
 
         if (devicePassword == null) {
@@ -216,7 +216,7 @@ function Root() {
     return <LoadingOverlay message={'Loading..'} />;
   }
 
-  //console.log('initial route', initialRoute);
+
 
   return (
     <NavigationContainer ref={navigationRef}>

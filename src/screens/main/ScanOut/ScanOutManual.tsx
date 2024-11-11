@@ -26,8 +26,7 @@ const {height, width} = Dimensions.get('window');
 const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
   route,
 }) => {
-  //const {parcel} = route.params as {parcel: Parcel};
- // console.log('Parcel:', parcel);
+  
 
  const [parcel, setParcel] = useState<Parcel | null>(null);
 
@@ -43,7 +42,7 @@ const ScanOutManualScreen: React.FC<NativeStackScreenProps<any, any>> = ({
    fetchParcel();
  }, []);
 
- console.log('Parcel:', parcel);
+ 
   const navigation = useNavigation<NativeStackNavigationProp<any>>(); // Add parentheses to call the function
   const [idNumber, setIdNumber] = useState('');
   const toast = useToast();

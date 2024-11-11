@@ -27,7 +27,7 @@ const ScanOutScreen = () => {
   const loadParcels = async () => {
     try {
       let fetchedParcels: Parcel[] = await fetchParcels(3);
-      // console.log("parcel data scan out ", fetchedParcels);
+     
       setParcels(fetchedParcels);
       setSearchResults(fetchedParcels);
     } catch (error) {
